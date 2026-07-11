@@ -20,7 +20,7 @@ class DsButton extends StatelessWidget {
 
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF00AEEF),
+        backgroundColor: const Color(0xFFB7F65E),
         disabledBackgroundColor: const Color(0xFFEBEBEB),
         disabledForegroundColor: const Color(0xFFA3A3A3),
         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -32,14 +32,14 @@ class DsButton extends StatelessWidget {
           ? const SizedBox(
               height: 24,
               width: 24,
-              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+              child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2),
             )
           : Text(
               label,
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: Colors.black,
               ),
             ),
     );

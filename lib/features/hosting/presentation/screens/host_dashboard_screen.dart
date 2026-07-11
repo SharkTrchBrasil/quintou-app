@@ -294,6 +294,7 @@ class HostDashboardScreen extends ConsumerWidget {
           ],
         ),
       ),
+      ),
     );
   }
 }

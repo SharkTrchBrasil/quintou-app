@@ -237,5 +237,5 @@ class CreateSpaceNotifier extends StateNotifier<CreateSpaceState> {
 }
 
 final createSpaceProvider = StateNotifierProvider<CreateSpaceNotifier, CreateSpaceState>((ref) {
-  return CreateSpaceNotifier(ref.read(dioProvider));
+  return CreateSpaceNotifier(ref.read(apiClientProvider).dio);
 });

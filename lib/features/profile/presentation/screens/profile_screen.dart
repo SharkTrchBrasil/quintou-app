@@ -26,7 +26,7 @@ class ProfileScreen extends ConsumerWidget {
               onPressed: () {
                 // Edit profile logic
               },
-              child: const Text('Edit profile', style: TextStyle(color: Color(0xFF00AEEF), fontSize: 16)),
+              child: const Text('Edit profile', style: TextStyle(color: Color(0xFFB7F65E), fontSize: 16)),
             ),
           const SizedBox(width: 8),
         ],
@@ -69,12 +69,12 @@ class ProfileScreen extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00AEEF),
+                    backgroundColor: const Color(0xFFB7F65E),
                     minimumSize: const Size(double.infinity, 50),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () => context.push('/login'),
-                  child: const Text('Log In or Sign Up', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  child: const Text('Log In or Sign Up', style: TextStyle(color: Color(0xFF171E0E), fontSize: 18, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
@@ -87,7 +87,7 @@ class ProfileScreen extends ConsumerWidget {
               child: Container(
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF0066CC), Color(0xFF003399)],
+                    colors: [Color(0xFFB7F65E), Color(0xFF90D91E)],
                   ),
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -101,20 +101,20 @@ class ProfileScreen extends ConsumerWidget {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(Icons.pool, color: Color(0xFF00AEEF)),
+                      child: const Icon(Icons.pool, color: Color(0xFFB7F65E)),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: const [
-                          Text('Get the 2026 Summer pass!', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text('Get the 2026 Summer pass!', style: TextStyle(color: Color(0xFF171E0E), fontWeight: FontWeight.bold, fontSize: 16)),
                           SizedBox(height: 4),
-                          Text('Enjoy \$0 in service fees, earn free bookings, and get priority support.', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                          Text('Enjoy \$0 in service fees, earn free bookings, and get priority support.', style: TextStyle(color: Color(0xFF171E0E), fontSize: 12)),
                         ],
                       ),
                     ),
-                    const Icon(Icons.chevron_right, color: Colors.white),
+                    const Icon(Icons.chevron_right, color: Color(0xFF171E0E)),
                   ],
                 ),
               ),
@@ -153,9 +153,9 @@ class ProfileScreen extends ConsumerWidget {
                 title: const Text('Switch to Hosting', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 trailing: Switch(
                   value: ref.watch(isHostModeProvider),
-                  activeColor: const Color(0xFF00AEEF),
+                  activeColor: const Color(0xFFB7F65E),
                   onChanged: (value) {
-                    ref.read(isHostModeProvider.notifier).state = value;
+                    ref.read(isHostModeProvider.notifier).setMode(value);
                   },
                 ),
               ),
@@ -164,7 +164,7 @@ class ProfileScreen extends ConsumerWidget {
                 badgeText: user.stripeOnboardingComplete ? 'OK' : 'PENDENTE',
                 onTap: () async {
                   try {
-                    final dio = ref.read(dioProvider);
+                    final dio = ref.read(apiClientProvider).dio;
                     final res = await dio.post('/payments/onboarding');
                     final url = res.data['url'];
                     if (await canLaunchUrl(Uri.parse(url))) {
@@ -209,10 +209,10 @@ class ProfileScreen extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   margin: const EdgeInsets.only(right: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF00AEEF),
+                    color: const Color(0xFFB7F65E),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Text(badgeText, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                  child: Text(badgeText, style: const TextStyle(color: Color(0xFF171E0E), fontSize: 12, fontWeight: FontWeight.bold)),
                 ),
               const Icon(Icons.chevron_right, color: Colors.grey),
             ],

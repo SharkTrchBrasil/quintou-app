@@ -72,20 +72,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     });
 
     try {
-      final dio = ref.read(dioProvider);
+      final dio = ref.read(apiClientProvider).dio;
       final response = await dio.post(
         '/auth/lookup-cpf',
         data: {'cpf': cpfClean},
       );
-
+      
       if (!mounted) return;
-
+      
       final data = response.data;
-      if (data['is_valid'] == true && data['real_name'] != null && data['real_name'].toString().isNotEmpty) {
+      if (data['is_valid'] == true) {
         setState(() {
           _cpfLookedUp = true;
           _cpfError = null;
-          _nameController.text = data['real_name'];
+          _nameController.text = data['real_name'] ?? 'Usuário Visitante';
         });
         
         Future.delayed(const Duration(milliseconds: 500), () {
@@ -93,16 +93,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         });
       } else {
         setState(() {
-          _cpfLookedUp = false;
-          _nameController.text = '';
-          _cpfError = data['error_message'] ?? 'CPF não encontrado na base de dados';
-        });
-      }
-    } on DioException catch (e) {
-      if (mounted) {
-        setState(() {
-          _cpfError = e.response?.data?['detail']?.toString() 
-              ?? 'Erro ao consultar CPF. Tente novamente.';
+          _cpfError = data['error_message'] ?? 'CPF inválido';
           _cpfLookedUp = false;
         });
       }
@@ -221,7 +212,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       ),
                       
                     if (_currentStep == 1) ...[
-                      const Text('Qual o seu CPF?', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF00AEEF))),
+                      const Text('Qual o seu CPF?', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black)),
                       const SizedBox(height: 8),
                       Text('Precisamos dele para criar sua conta de forma segura.', style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
                       const SizedBox(height: 32),
@@ -231,12 +222,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         title: 'CPF',
                         hint: '000.000.000-00',
                         keyboardType: TextInputType.number,
-                        formatters: [FilteringTextInputFormatter.digitsOnly, CpfInputFormatter()],
+                        formatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly, CpfInputFormatter()],
                         enabled: !_cpfLookedUp,
                         onChanged: (val) => _lookupCpf(val),
                         validator: _validateCPF,
                         suffixIcon: _isLookingUpCpf
-                            ? const Padding(padding: EdgeInsets.all(12.0), child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF00AEEF)))
+                            ? const Padding(padding: EdgeInsets.all(12.0), child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFB7F65E)))
                             : _cpfLookedUp ? const Icon(Icons.check_circle, color: Colors.green, size: 22) : null,
                       ),
                       if (_cpfError != null) ...[
@@ -261,7 +252,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         isDisabled: !_cpfLookedUp || _isLookingUpCpf,
                       ),
                     ] else if (_currentStep == 2) ...[
-                      Text('Seja bem vindo(a),\n${_nameController.text.split(' ').first}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF00AEEF))),
+                      Text('Seja bem vindo(a),\n${_nameController.text.split(' ').first}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black)),
                       const SizedBox(height: 8),
                       const Text('Agora só faltam seus dados de contato e senha.', style: TextStyle(fontSize: 14, color: Colors.black54)),
                       const SizedBox(height: 32),
@@ -271,7 +262,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         title: 'E-mail',
                         hint: 'Digite seu e-mail',
                         keyboardType: TextInputType.emailAddress,
-                        formatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9@._-]'))],
+                        formatters: <TextInputFormatter>[FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9@._-]'))],
                         validator: _validateEmail,
                       ),
                       const SizedBox(height: 20),
@@ -280,7 +271,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         title: 'Celular',
                         hint: '(11) 99999-9999',
                         keyboardType: TextInputType.phone,
-                        formatters: [FilteringTextInputFormatter.digitsOnly, TelefoneInputFormatter()],
+                        formatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly, TelefoneInputFormatter()],
                         validator: _validatePhone,
                       ),
                       const SizedBox(height: 20),
@@ -305,36 +296,70 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         },
                       ),
                     ] else if (_currentStep == 3) ...[
-                      const Text('Último passo!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF00AEEF))),
+                      const Text('Último passo!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black)),
                       const SizedBox(height: 8),
                       const Text('O que você deseja fazer no Quintou?', style: TextStyle(fontSize: 14, color: Colors.black54)),
                       const SizedBox(height: 32),
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          children: [
-                            RadioListTile<bool>(
-                              title: const Text('Quero alugar espaços', style: TextStyle(fontWeight: FontWeight.bold)),
-                              subtitle: const Text('Encontre locais incríveis para relaxar ou celebrar.'),
-                              value: false,
-                              groupValue: _isHost,
-                              activeColor: const Color(0xFF00AEEF),
-                              onChanged: (value) => setState(() => _isHost = value!),
+                      Column(
+                        children: [
+                          GestureDetector(
+                            onTap: () => setState(() => _isHost = false),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: !_isHost ? const Color(0xFFB7F65E).withOpacity(0.1) : Colors.white,
+                                border: Border.all(
+                                  color: !_isHost ? const Color(0xFFB7F65E) : Colors.grey.shade300,
+                                  width: 0.5,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Quero alugar espaços', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                        SizedBox(height: 4),
+                                        Text('Encontre locais incríveis para relaxar ou celebrar.', style: TextStyle(color: Colors.black54)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            const Divider(height: 1),
-                            RadioListTile<bool>(
-                              title: const Text('Quero anunciar meu espaço', style: TextStyle(fontWeight: FontWeight.bold)),
-                              subtitle: const Text('Ganhe dinheiro alugando sua piscina, quadra ou salão.'),
-                              value: true,
-                              groupValue: _isHost,
-                              activeColor: const Color(0xFF00AEEF),
-                              onChanged: (value) => setState(() => _isHost = value!),
+                          ),
+                          const SizedBox(height: 16),
+                          GestureDetector(
+                            onTap: () => setState(() => _isHost = true),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: _isHost ? const Color(0xFFB7F65E).withOpacity(0.1) : Colors.white,
+                                border: Border.all(
+                                  color: _isHost ? const Color(0xFFB7F65E) : Colors.grey.shade300,
+                                  width: 0.5,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Quero anunciar meu espaço', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                        SizedBox(height: 4),
+                                        Text('Ganhe dinheiro alugando sua piscina, quadra ou salão.', style: TextStyle(color: Colors.black54)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 40),
                       DsButton(

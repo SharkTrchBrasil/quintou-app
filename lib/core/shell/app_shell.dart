@@ -4,9 +4,29 @@ import 'package:quintou_app/features/auth/presentation/providers/auth_provider.d
 import 'package:quintou_app/features/home/presentation/screens/home_screen.dart';
 import 'package:quintou_app/features/profile/presentation/screens/profile_screen.dart';
 import 'package:quintou_app/features/hosting/presentation/screens/host_dashboard_screen.dart';
+import 'package:quintou_app/features/explore/presentation/screens/explore_screen.dart';
+import 'package:quintou_app/features/explore/presentation/screens/search_screen.dart';
 
-// Provider para controlar se o usuário está no modo anfitrião
-final isHostModeProvider = StateProvider<bool>((ref) => false);
+class IsHostModeNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+  void toggle() => state = !state;
+  void setMode(bool mode) => state = mode;
+}
+
+final isHostModeProvider = NotifierProvider<IsHostModeNotifier, bool>(() {
+  return IsHostModeNotifier();
+});
+
+class GuestTabIndexNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+  void setIndex(int index) => state = index;
+}
+
+final guestTabIndexProvider = NotifierProvider<GuestTabIndexNotifier, int>(() {
+  return GuestTabIndexNotifier();
+});
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
@@ -16,15 +36,14 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
-  int _guestTabIndex = 2; // Home é o centro (Swimply style)
   int _hostTabIndex = 0;
 
   // Telas do modo HÓSPEDE
   final List<Widget> _guestScreens = const [
-    _PlaceholderScreen(title: 'Explore', icon: Icons.search),
-    _PlaceholderScreen(title: 'For You', icon: Icons.favorite),
     HomeScreen(),
+    SearchScreen(),
     _PlaceholderScreen(title: 'Chat', icon: Icons.chat_bubble_outline),
+    _PlaceholderScreen(title: 'Favoritos', icon: Icons.favorite),
     ProfileScreen(),
   ];
 
@@ -47,7 +66,8 @@ class _AppShellState extends ConsumerState<AppShell> {
     final canBeHost = user?.isHost ?? false;
     final effectiveHostMode = isHostMode && canBeHost;
 
-    final currentIndex = effectiveHostMode ? _hostTabIndex : _guestTabIndex;
+    final guestTabIndex = ref.watch(guestTabIndexProvider);
+    final currentIndex = effectiveHostMode ? _hostTabIndex : guestTabIndex;
     final screens = effectiveHostMode ? _hostScreens : _guestScreens;
 
     return Scaffold(
@@ -55,29 +75,32 @@ class _AppShellState extends ConsumerState<AppShell> {
         index: currentIndex,
         children: screens,
       ),
-      bottomNavigationBar: effectiveHostMode
-          ? _buildHostNavBar(currentIndex)
-          : _buildGuestNavBar(currentIndex),
+      bottomNavigationBar: Theme(
+        data: Theme.of(context).copyWith(
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+        ),
+        child: effectiveHostMode
+            ? _buildHostNavBar(currentIndex)
+            : _buildGuestNavBar(currentIndex),
+      ),
     );
   }
 
   Widget _buildGuestNavBar(int currentIndex) {
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
-      selectedItemColor: const Color(0xFF00AEEF),
-      unselectedItemColor: Colors.grey,
       currentIndex: currentIndex,
-      onTap: (index) => setState(() => _guestTabIndex = index),
+      onTap: (index) => ref.read(guestTabIndexProvider.notifier).setIndex(index),
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Explore'),
-        BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: 'For You'),
         BottomNavigationBarItem(
           icon: Icon(Icons.wb_sunny_outlined),
-          activeIcon: Icon(Icons.wb_sunny),
           label: 'Home',
         ),
-        BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: 'Chat'),
-        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+        BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Explorar'),
+        BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: 'Chats'),
+        BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: 'Favoritos'),
+        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Perfil'),
       ],
     );
   }
@@ -85,8 +108,6 @@ class _AppShellState extends ConsumerState<AppShell> {
   Widget _buildHostNavBar(int currentIndex) {
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
-      selectedItemColor: const Color(0xFF00AEEF),
-      unselectedItemColor: Colors.grey,
       currentIndex: currentIndex,
       onTap: (index) => setState(() => _hostTabIndex = index),
       items: const [

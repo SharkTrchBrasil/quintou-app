@@ -17,7 +17,15 @@ final spacesProvider = FutureProvider<List<Space>>((ref) async {
   return repository.getSpaces();
 });
 
-final categoryFilterProvider = StateProvider<String?>((ref) => null);
+class CategoryFilterNotifier extends Notifier<String?> {
+  @override
+  String? build() => null;
+  void setCategory(String? category) => state = category;
+}
+
+final categoryFilterProvider = NotifierProvider<CategoryFilterNotifier, String?>(() {
+  return CategoryFilterNotifier();
+});
 
 final filteredSpacesProvider = FutureProvider<List<Space>>((ref) async {
   final category = ref.watch(categoryFilterProvider);

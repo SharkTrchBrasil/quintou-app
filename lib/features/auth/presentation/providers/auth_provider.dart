@@ -19,17 +19,33 @@ class AuthState {
   }
 }
 
-class AuthNotifier extends StateNotifier<AuthState> {
-  final Ref ref;
-
-  AuthNotifier(this.ref) : super(AuthState()) {
+class AuthNotifier extends Notifier<AuthState> {
+  @override
+  AuthState build() {
     _loadUser();
+    return AuthState();
   }
 
   Future<void> _loadUser() async {
-    // Aqui nós poderíamos bater no endpoint /users/me caso tivéssemos o token
-    // Por enquanto vamos apenas simular que não há usuário logado no início
-    state = state.copyWith(isLoading: false);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('access_token');
+      if (token == null) {
+        state = state.copyWith(isLoading: false);
+        return;
+      }
+      
+      // Tem token salvo — buscar dados do usuário
+      final repo = ref.read(authRepositoryProvider);
+      final user = await repo.getMe();
+      state = state.copyWith(isLoading: false, user: user);
+    } catch (e) {
+      // Token expirado ou inválido — limpar e seguir como deslogado
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('access_token');
+      await prefs.remove('refresh_token');
+      state = state.copyWith(isLoading: false);
+    }
   }
 
   Future<bool> login(String email, String password) async {
@@ -91,6 +107,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 }
 
-final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  return AuthNotifier(ref);
+final authProvider = NotifierProvider<AuthNotifier, AuthState>(() {
+  return AuthNotifier();
 });

@@ -26,4 +26,9 @@ class AuthRepository {
     });
     return Token.fromJson(response.data);
   }
+
+  Future<User> getMe() async {
+    final response = await _apiClient.dio.get('/users/me');
+    return User.fromJson(response.data);
+  }
 }

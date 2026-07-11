@@ -39,7 +39,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Entrar no Quintou', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
@@ -52,7 +51,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           children: [
             const Text(
               'Bem-vindo de volta!',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -99,7 +98,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   onPressed: () => context.push('/register'),
                   child: const Text(
                     'Cadastre-se',
-                    style: TextStyle(color: Color(0xFF00AEEF), fontWeight: FontWeight.bold),
+                    style: TextStyle(color: Color(0xFFB7F65E), fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
