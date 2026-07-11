@@ -21,7 +21,7 @@ class HostDashboardScreen extends ConsumerWidget {
             children: [
               // Header
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                padding: const EdgeInsets.fromLTRB(14, 24, 14, 0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -50,7 +50,7 @@ class HostDashboardScreen extends ConsumerWidget {
 
               // Tab Selector: Performance / Marketing
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
@@ -88,7 +88,7 @@ class HostDashboardScreen extends ConsumerWidget {
 
               // Overview Card
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -160,7 +160,7 @@ class HostDashboardScreen extends ConsumerWidget {
 
               // Earnings Card
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -201,7 +201,7 @@ class HostDashboardScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: TextButton(
                   onPressed: () {},
                   child: const Text('View Earnings →', style: TextStyle(color: Color(0xFF00AEEF), fontWeight: FontWeight.bold)),
@@ -211,12 +211,12 @@ class HostDashboardScreen extends ConsumerWidget {
 
               // Quick Actions
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: const Text('Quick Actions', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 16),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: Row(
                   children: [
                     _buildQuickAction(Icons.add_circle_outline, 'New\nListing', const Color(0xFF00AEEF), onTap: () {
