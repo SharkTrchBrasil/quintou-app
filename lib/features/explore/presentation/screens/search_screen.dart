@@ -1,16 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'dart:async';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:go_router/go_router.dart';
+
+import 'package:quintou_app/features/explore/data/providers/categories_provider.dart';
+import 'package:quintou_app/features/spaces/presentation/providers/spaces_provider.dart';
+import 'package:quintou_app/features/spaces/presentation/widgets/space_list_card.dart';
+import 'package:quintou_app/features/spaces/presentation/widgets/space_grid_card.dart';
+import 'package:quintou_app/features/explore/presentation/widgets/filters_bottom_sheet.dart';
+import 'package:quintou_app/core/shell/app_shell.dart';
+
+class IsGridModeNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+  void toggle() => state = !state;
+}
+final isGridModeProvider = NotifierProvider<IsGridModeNotifier, bool>(() => IsGridModeNotifier());
+
+class SortOptionNotifier extends Notifier<String> {
+  @override
+  String build() => 'Mais Relevantes';
+  void setOption(String option) => state = option;
+}
+final sortOptionProvider = NotifierProvider<SortOptionNotifier, String>(() => SortOptionNotifier());
 
 class SearchCategoryNotifier extends Notifier<String> {
   @override
   String build() => 'Tudo no Quintou';
   void setCategory(String cat) => state = cat;
 }
-
-final searchCategoryProvider = NotifierProvider<SearchCategoryNotifier, String>(() {
-  return SearchCategoryNotifier();
-});
+final searchCategoryProvider = NotifierProvider<SearchCategoryNotifier, String>(() => SearchCategoryNotifier());
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -20,239 +40,406 @@ class SearchScreen extends ConsumerStatefulWidget {
 }
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
-  final TextEditingController _searchController = TextEditingController();
-  final FocusNode _focusNode = FocusNode();
-  Timer? _debounce;
-  
-  bool _isLoading = false;
-  List<Map<String, dynamic>> _suggestions = [];
+  String _currentLocation = 'Buscando...';
+  bool _isLoadingLocation = true;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    // Inicia com foco automático
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      FocusScope.of(context).requestFocus(_focusNode);
-    });
+    _determinePosition();
   }
 
   @override
   void dispose() {
-    _searchController.dispose();
-    _focusNode.dispose();
-    _debounce?.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  void _onSearchChanged(String query) {
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 400), () {
-      if (query.isNotEmpty) {
-        _fetchSuggestions(query);
+  Future<void> _determinePosition() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          setState(() {
+            _currentLocation = 'Localização desativada';
+            _isLoadingLocation = false;
+          });
+        }
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            setState(() {
+              _currentLocation = 'Sem permissão';
+              _isLoadingLocation = false;
+            });
+          }
+          return;
+        }
+      }
+      
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          setState(() {
+            _currentLocation = 'Permissão negada';
+            _isLoadingLocation = false;
+          });
+        }
+        return;
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.low,
+      );
+
+      List<Placemark> placemarks = await Geocoding().placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+        if (mounted) {
+          setState(() {
+            _currentLocation = '${place.subAdministrativeArea ?? place.locality ?? 'Sua Localização'}, ${place.administrativeArea ?? ''}';
+            _isLoadingLocation = false;
+          });
+        }
       } else {
+        if (mounted) {
+          setState(() {
+            _currentLocation = 'Localização não encontrada';
+            _isLoadingLocation = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         setState(() {
-          _suggestions = [];
+          _currentLocation = 'Erro ao buscar local';
+          _isLoadingLocation = false;
         });
       }
-    });
-  }
-
-  Future<void> _fetchSuggestions(String query) async {
-    setState(() => _isLoading = true);
-    
-    // Simular busca de sugestões (pode ser conectado à API depois)
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    if (mounted) {
-      final selectedCategory = ref.read(searchCategoryProvider);
-      setState(() {
-        _suggestions = [
-          {'title': 'Sítio com piscina', 'subtitle': 'Busca sugerida'},
-          {'title': 'Salão para casamentos', 'subtitle': 'Em $selectedCategory'},
-          {'title': 'Churrasqueira', 'subtitle': 'Comodidade'},
-        ];
-        _isLoading = false;
-      });
     }
   }
 
-  void _handleSuggestionTap(Map<String, dynamic> suggestion) {
-    FocusScope.of(context).unfocus();
-    // TODO: Implementar navegação para resultados de busca
+  void _openDetailedSearch() {
+    context.push('/detailed-search');
   }
 
-  void _submitRawSearch() {
-    FocusScope.of(context).unfocus();
-    // TODO: Implementar busca
+  void _showSortBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final currentSort = ref.read(sortOptionProvider);
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Ordenar por',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.black87),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _buildSortOption('Mais relevantes', 'Mais Relevantes', currentSort, setSheetState),
+                    _buildSortOption('Menor preço', 'Menor Preço', currentSort, setSheetState),
+                    _buildSortOption('Maior preço', 'Maior Preço', currentSort, setSheetState),
+                    _buildSortOption('Melhor avaliados', 'Melhor Avaliados', currentSort, setSheetState),
+                  ],
+                ),
+              ),
+            );
+          }
+        );
+      },
+    );
+  }
+
+  Widget _buildSortOption(String label, String value, String currentSort, StateSetter setSheetState) {
+    final bool isSelected = currentSort == value;
+    return InkWell(
+      onTap: () {
+        ref.read(sortOptionProvider.notifier).setOption(value);
+        Navigator.pop(context);
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+        child: Row(
+          children: [
+            Icon(
+              isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+              color: isSelected ? Colors.black87 : Colors.grey[400],
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final spacesAsyncValue = ref.watch(spacesProvider);
+    final isGridMode = ref.watch(isGridModeProvider);
+
     return Scaffold(
       backgroundColor: Colors.white,
-
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        automaticallyImplyLeading: false, // Não mostrar seta voltar no tab bar
-        titleSpacing: 16,
-        title: TextField(
-          controller: _searchController,
-          focusNode: _focusNode,
-          onChanged: _onSearchChanged,
-          onSubmitted: (_) => _submitRawSearch(),
-          decoration: InputDecoration(
-            hintText: 'Onde você quer festejar?',
-            hintStyle: const TextStyle(color: Colors.grey),
-            prefixIcon: const Icon(Icons.search, color: Colors.grey),
-            suffixIcon: _searchController.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.close, color: Colors.grey),
-                    onPressed: () {
-                      _searchController.clear();
-                      _onSearchChanged('');
-                    },
-                  )
-                : null,
-            contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(30),
-              borderSide: BorderSide.none,
-            ),
-            filled: true,
-            fillColor: Colors.grey[200],
-          ),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: Container(
-            height: 60,
-            padding: const EdgeInsets.only(bottom: 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
-            ),
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: [
-                _buildFilterChip('Tudo no Quintou'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Casamentos'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Festas'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Corporativo'),
-                const SizedBox(width: 8),
-                _buildFilterChip('Infantil'),
-              ],
-            ),
-          ),
-        ),
-      ),
-      body: _buildBody(),
-    );
-  }
-
-  Widget _buildFilterChip(String label) {
-    final selectedCategory = ref.watch(searchCategoryProvider);
-    final isSelected = selectedCategory == label;
-    return InkWell(
-      onTap: () {
-        ref.read(searchCategoryProvider.notifier).setCategory(label);
-        if (_searchController.text.isNotEmpty) {
-          _fetchSuggestions(_searchController.text);
-        }
-      },
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFB7F65E) : Colors.white,
-          border: Border.all(color: isSelected ? const Color(0xFFB7F65E) : Colors.grey[300]!),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.black : Colors.grey[600],
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBody() {
-    if (_isLoading && _suggestions.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_searchController.text.isEmpty) {
-      return const Center(
-        child: Text(
-          'Digite o nome de uma cidade ou espaço',
-          style: TextStyle(color: Colors.grey, fontSize: 16),
-        ),
-      );
-    }
-
-    if (_suggestions.isEmpty && !_isLoading) {
-      return Center(
+      body: SafeArea(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              'Nenhum resultado encontrado para "${_searchController.text}"',
-              style: TextStyle(color: Colors.grey[600]),
+            // Header: Localização e Notificações (igual à Home)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              child: Row(
+                children: [
+                  const Icon(Icons.location_on_outlined, color: Colors.black87),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        _determinePosition();
+                      },
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              _currentLocation,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (_isLoadingLocation)
+                            const Padding(
+                              padding: EdgeInsets.only(left: 8.0),
+                              child: SizedBox(
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            )
+                          else
+                            const Icon(Icons.keyboard_arrow_down, color: Colors.black87),
+                        ],
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.notifications_none, color: Colors.black87),
+                    onPressed: () {},
+                  ),
+                ],
+              ),
+            ),
+            
+            // Search Bar (Fake)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: GestureDetector(
+                onTap: _openDetailedSearch,
+                child: Container(
+                  height: 48,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.search, color: Colors.grey[600], size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'O que você está buscando?',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 15,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Filtros and Ordenar Row
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Row(
+                children: [
+                  // Filtros
+                  InkWell(
+                    onTap: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        useSafeArea: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (context) => const FiltersBottomSheet(),
+                      );
+                    },
+                    child: const Row(
+                      children: [
+                        Icon(Icons.tune, color: Colors.black87, size: 20),
+                        SizedBox(width: 6),
+                        Text('Filtros', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                  ),
+                  
+                  // Divider
+                  Container(
+                    height: 16,
+                    width: 1,
+                    color: Colors.grey[300],
+                    margin: const EdgeInsets.symmetric(horizontal: 24),
+                  ),
+                  
+                  // Ordenar
+                  InkWell(
+                    onTap: _showSortBottomSheet,
+                    child: const Row(
+                      children: [
+                        Icon(Icons.swap_vert, color: Colors.black87, size: 20),
+                        SizedBox(width: 6),
+                        Text('Ordenar', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                  ),
+
+                  const Spacer(),
+                  
+                  // View Toggles (Lista / Grid)
+                  Row(
+                    children: [
+                      InkWell(
+                        onTap: () => ref.read(isGridModeProvider.notifier).toggle(),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: !isGridMode ? Colors.grey[100] : Colors.white,
+                            border: Border.all(color: Colors.grey[300]!),
+                            borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
+                          ),
+                          child: Icon(Icons.list, color: !isGridMode ? Colors.black87 : Colors.grey[600], size: 20),
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () => ref.read(isGridModeProvider.notifier).toggle(),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: isGridMode ? Colors.grey[100] : Colors.white,
+                            border: Border(
+                              top: BorderSide(color: Colors.grey[300]!),
+                              bottom: BorderSide(color: Colors.grey[300]!),
+                              right: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
+                          ),
+                          child: Icon(Icons.grid_view, color: isGridMode ? Colors.black87 : Colors.grey[600], size: 20),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const Divider(height: 16, color: Color(0xFFEEEEEE)),
+
+            // Feed Real (Backend)
+            Expanded(
+              child: spacesAsyncValue.when(
+                data: (spaces) {
+                  if (spaces.isEmpty) {
+                    return const Center(child: Text('Nenhum anúncio encontrado.', style: TextStyle(color: Colors.grey)));
+                  }
+                  
+                  return RefreshIndicator(
+                    onRefresh: () => ref.refresh(spacesProvider.future),
+                    child: isGridMode 
+                    ? GridView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.all(16.0),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 16,
+                          crossAxisSpacing: 16,
+                          childAspectRatio: 0.75, // Ajuste para caber as imagens
+                        ),
+                        itemCount: spaces.length,
+                        itemBuilder: (context, index) {
+                          return SpaceGridCard(
+                            space: spaces[index],
+                            onTap: () => context.push('/space-details', extra: spaces[index]),
+                          );
+                        },
+                      )
+                    : ListView.builder(
+                        controller: _scrollController,
+                        padding: EdgeInsets.zero,
+                        itemCount: spaces.length,
+                        itemBuilder: (context, index) {
+                          return SpaceListCard(
+                            space: spaces[index],
+                            onTap: () => context.push('/space-details', extra: spaces[index]),
+                            onChatPressed: () {
+                              // TODO: Navegar para tela de chat
+                            },
+                          );
+                        },
+                      ),
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, stack) => Center(child: Text('Erro ao carregar os espaços: $err')),
+              ),
             ),
           ],
         ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (_searchController.text.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Você está buscando por',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: Colors.grey[800],
-              ),
-            ),
-          ),
-        Expanded(
-          child: ListView.builder(
-            itemCount: _suggestions.length,
-            itemBuilder: (context, index) {
-              final suggestion = _suggestions[index];
-              return ListTile(
-                leading: const Icon(Icons.search, color: Colors.black54),
-                title: Text(
-                  suggestion['title'] ?? '',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                subtitle: Text(
-                  suggestion['subtitle'] ?? '',
-                  style: const TextStyle(fontSize: 13),
-                ),
-                onTap: () => _handleSuggestionTap(suggestion),
-              );
-            },
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

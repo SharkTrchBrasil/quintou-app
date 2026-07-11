@@ -17,7 +17,7 @@ class CreateSpaceScreen extends ConsumerStatefulWidget {
 class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  final int _totalPages = 5;
+  final int _totalPages = 7;
 
   final _titleCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
@@ -28,6 +28,9 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
   final _neighborhoodCtrl = TextEditingController();
   final _priceCtrl = TextEditingController(text: '50');
   final _guestsCtrl = TextEditingController(text: '10');
+  
+  final _lengthCtrl = TextEditingController();
+  final _widthCtrl = TextEditingController();
 
   void _nextPage() {
     if (_currentPage < _totalPages - 1) {
@@ -48,7 +51,7 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
   Future<void> _submit() async {
     final success = await ref.read(createSpaceProvider.notifier).submit();
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Espaço criado com sucesso!')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Espaço publicado com sucesso!')));
       context.pop();
     }
   }
@@ -89,11 +92,13 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
                 physics: const NeverScrollableScrollPhysics(),
                 onPageChanged: (idx) => setState(() => _currentPage = idx),
                 children: [
-                  _buildStep1(state, notifier),
-                  _buildStep2(state, notifier),
-                  _buildStep3(state, notifier),
-                  _buildStep4(state, notifier),
-                  _buildStep5(state, notifier),
+                  _buildStep1(state, notifier), // O que
+                  _buildStep2(state, notifier), // Onde
+                  _buildStep3(state, notifier), // Detalhes
+                  _buildStep4(state, notifier), // Comodidades
+                  _buildStep5(state, notifier), // Regras
+                  _buildStep6(state, notifier), // Preço
+                  _buildStep7(state, notifier), // Imagens
                 ],
               ),
             ),
@@ -232,7 +237,7 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Detalhes e Capacidade', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          const Text('Detalhes e Estrutura', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
           const SizedBox(height: 24),
           DsTextField(
             label: 'Número Máximo de Pessoas',
@@ -242,11 +247,57 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
           ),
           const SizedBox(height: 24),
           SwitchListTile(
-            title: const Text('O espaço é ao ar livre (Outdoor)?'),
+            title: const Text('Espaço ao ar livre (Outdoor)'),
             value: state.isOutdoor,
             onChanged: (val) => notifier.updateField(isOutdoor: val),
             activeColor: const Color(0xFF00AEEF),
             contentPadding: EdgeInsets.zero,
+          ),
+          SwitchListTile(
+            title: const Text('Possui Banheiro'),
+            value: state.hasRestroom,
+            onChanged: (val) => notifier.updateField(hasRestroom: val),
+            activeColor: const Color(0xFF00AEEF),
+            contentPadding: EdgeInsets.zero,
+          ),
+          SwitchListTile(
+            title: const Text('Acessibilidade (PCD)'),
+            value: state.isAdaFriendly,
+            onChanged: (val) => notifier.updateField(isAdaFriendly: val),
+            activeColor: const Color(0xFF00AEEF),
+            contentPadding: EdgeInsets.zero,
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<String>(
+            value: state.privacyLevel,
+            decoration: InputDecoration(labelText: 'Nível de Privacidade', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+            items: const [
+              DropdownMenuItem(value: 'Standard', child: Text('Padrão (Visualizável)')),
+              DropdownMenuItem(value: 'Secluded', child: Text('Isolado (100% Privado)')),
+            ],
+            onChanged: (val) => notifier.updateField(privacyLevel: val),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: DsTextField(
+                  label: 'Comprimento (m)',
+                  controller: _lengthCtrl,
+                  keyboardType: TextInputType.number,
+                  onChanged: (val) => notifier.updateField(sizeLength: double.tryParse(val) ?? 0),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: DsTextField(
+                  label: 'Largura (m)',
+                  controller: _widthCtrl,
+                  keyboardType: TextInputType.number,
+                  onChanged: (val) => notifier.updateField(sizeWidth: double.tryParse(val) ?? 0),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -254,42 +305,75 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
   }
 
   Widget _buildStep4(CreateSpaceState state, CreateSpaceNotifier notifier) {
+    final availableAmenities = [
+      'Wi-Fi', 'Som', 'TV', 'Ar Condicionado', 'Churrasqueira', 'Forno de Pizza', 'Espaço Gourmet',
+      'Ducha', 'Cadeiras', 'Espreguiçadeiras', 'Guarda-sol', 'Rede de Descanso',
+      'Piscina Infantil', 'Cascata', 'Sauna', 'Tobogã', 'Trampolim',
+      'Estacionamento', 'Playground', 'Campo de Futebol', 'Quadra de Areia'
+    ];
+    
+    final availableTags = [
+      'Festa', 'Churrasco com Amigos', 'Reunião Familiar', 'Ensaio Fotográfico', 
+      'Gravação de Vídeo', 'Corporativo', 'Day Use'
+    ];
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Preço e Regras', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          const Text('Comodidades & Diferenciais', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
           const SizedBox(height: 24),
-          DsTextField(
-            label: 'Preço por Hora (R\$)',
-            controller: _priceCtrl,
-            keyboardType: TextInputType.number,
-            onChanged: (val) => notifier.updateField(price: double.tryParse(val) ?? 50.0),
+          
+          SwitchListTile(
+            title: const Text('Piscina Aquecida'),
+            value: state.hasHeatedPool,
+            onChanged: (val) => notifier.updateField(hasHeatedPool: val),
+            activeColor: const Color(0xFF00AEEF),
+            contentPadding: EdgeInsets.zero,
           ),
+          SwitchListTile(
+            title: const Text('Hidromassagem / Jacuzzi'),
+            value: state.hasHotTub,
+            onChanged: (val) => notifier.updateField(hasHotTub: val),
+            activeColor: const Color(0xFF00AEEF),
+            contentPadding: EdgeInsets.zero,
+          ),
+          
+          const SizedBox(height: 24),
+          const Text('O que tem no espaço?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: availableAmenities.map((am) {
+              final isSelected = state.amenities.contains(am);
+              return FilterChip(
+                label: Text(am),
+                selected: isSelected,
+                selectedColor: const Color(0xFF00AEEF).withOpacity(0.2),
+                checkmarkColor: const Color(0xFF00AEEF),
+                onSelected: (_) => notifier.toggleAmenity(am),
+              );
+            }).toList(),
+          ),
+          
           const SizedBox(height: 32),
-          const Text('O que é permitido?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          SwitchListTile(
-            title: const Text('Festas e Eventos'),
-            value: state.allowsParties,
-            onChanged: (val) => notifier.updateField(allowsParties: val),
-            activeColor: const Color(0xFF00AEEF),
-            contentPadding: EdgeInsets.zero,
-          ),
-          SwitchListTile(
-            title: const Text('Fumar'),
-            value: state.allowsSmoking,
-            onChanged: (val) => notifier.updateField(allowsSmoking: val),
-            activeColor: const Color(0xFF00AEEF),
-            contentPadding: EdgeInsets.zero,
-          ),
-          SwitchListTile(
-            title: const Text('Animais de Estimação (Pets)'),
-            value: state.allowsPets,
-            onChanged: (val) => notifier.updateField(allowsPets: val),
-            activeColor: const Color(0xFF00AEEF),
-            contentPadding: EdgeInsets.zero,
+          const Text('Ideal para...', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: availableTags.map((tg) {
+              final isSelected = state.tags.contains(tg);
+              return FilterChip(
+                label: Text(tg),
+                selected: isSelected,
+                selectedColor: const Color(0xFF00AEEF).withOpacity(0.2),
+                checkmarkColor: const Color(0xFF00AEEF),
+                onSelected: (_) => notifier.toggleTag(tg),
+              );
+            }).toList(),
           ),
         ],
       ),
@@ -302,9 +386,81 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Adicione fotos do seu espaço', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          const Text('Regras da Casa', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Text('Mostre os melhores ângulos. A primeira foto será a capa do anúncio.', style: TextStyle(color: Colors.grey)),
+          const Text('O que os convidados podem fazer?', style: TextStyle(color: Colors.grey)),
+          const SizedBox(height: 24),
+          
+          SwitchListTile(title: const Text('Festas e Eventos'), value: state.allowsParties, onChanged: (val) => notifier.updateField(allowsParties: val), activeColor: const Color(0xFF00AEEF), contentPadding: EdgeInsets.zero),
+          SwitchListTile(title: const Text('Fumar'), value: state.allowsSmoking, onChanged: (val) => notifier.updateField(allowsSmoking: val), activeColor: const Color(0xFF00AEEF), contentPadding: EdgeInsets.zero),
+          SwitchListTile(title: const Text('Animais de Estimação (Pets)'), value: state.allowsPets, onChanged: (val) => notifier.updateField(allowsPets: val), activeColor: const Color(0xFF00AEEF), contentPadding: EdgeInsets.zero),
+          SwitchListTile(title: const Text('Crianças'), value: state.allowsChildren, onChanged: (val) => notifier.updateField(allowsChildren: val), activeColor: const Color(0xFF00AEEF), contentPadding: EdgeInsets.zero),
+          SwitchListTile(title: const Text('Bebida Alcoólica'), value: state.allowsAlcohol, onChanged: (val) => notifier.updateField(allowsAlcohol: val), activeColor: const Color(0xFF00AEEF), contentPadding: EdgeInsets.zero),
+          SwitchListTile(title: const Text('Som Alto'), value: state.allowsLoudMusic, onChanged: (val) => notifier.updateField(allowsLoudMusic: val), activeColor: const Color(0xFF00AEEF), contentPadding: EdgeInsets.zero),
+          SwitchListTile(title: const Text('Uso Comercial (Fotos/Vídeos)'), value: state.allowsCommercial, onChanged: (val) => notifier.updateField(allowsCommercial: val), activeColor: const Color(0xFF00AEEF), contentPadding: EdgeInsets.zero),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStep6(CreateSpaceState state, CreateSpaceNotifier notifier) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Preço e Reservas', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 24),
+          DsTextField(
+            label: 'Preço Base (R\$)',
+            controller: _priceCtrl,
+            keyboardType: TextInputType.number,
+            onChanged: (val) => notifier.updateField(price: double.tryParse(val) ?? 50.0),
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<String>(
+            value: state.pricingMode,
+            decoration: InputDecoration(labelText: 'Cobrar por', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+            items: const [
+              DropdownMenuItem(value: 'PER_HOUR', child: Text('Por Hora')),
+              DropdownMenuItem(value: 'PER_DAY', child: Text('Por Dia')),
+            ],
+            onChanged: (val) => notifier.updateField(pricingMode: val),
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<String>(
+            value: state.cancellationPolicy,
+            decoration: InputDecoration(labelText: 'Política de Cancelamento', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+            items: const [
+              DropdownMenuItem(value: 'FLEXIVEL', child: Text('Flexível (Até 24h)')),
+              DropdownMenuItem(value: 'MODERADO', child: Text('Moderado (Até 5 dias)')),
+              DropdownMenuItem(value: 'RIGOROSO', child: Text('Rigoroso (Até 14 dias)')),
+            ],
+            onChanged: (val) => notifier.updateField(cancellationPolicy: val),
+          ),
+          const SizedBox(height: 24),
+          SwitchListTile(
+            title: const Text('Reserva Instantânea'),
+            subtitle: const Text('Convidados não precisam de aprovação'),
+            value: !state.requiresApproval,
+            onChanged: (val) => notifier.updateField(requiresApproval: !val),
+            activeColor: const Color(0xFF00AEEF),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStep7(CreateSpaceState state, CreateSpaceNotifier notifier) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Fotos do Espaço', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          const Text('A primeira foto será a capa do anúncio.', style: TextStyle(color: Colors.grey)),
           const SizedBox(height: 24),
           
           ElevatedButton.icon(

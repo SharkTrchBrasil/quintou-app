@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:quintou_app/features/explore/presentation/screens/detailed_search_screen.dart';
 import 'package:quintou_app/features/home/presentation/screens/home_screen.dart';
 import 'package:quintou_app/features/auth/presentation/screens/login_screen.dart';
 import 'package:quintou_app/features/auth/presentation/screens/register_screen.dart';
@@ -14,6 +15,10 @@ final goRouter = GoRouter(
     GoRoute(
       path: '/',
       builder: (context, state) => const AppShell(),
+    ),
+    GoRoute(
+      path: '/detailed-search',
+      builder: (context, state) => const DetailedSearchScreen(),
     ),
     GoRoute(
       path: '/login',
