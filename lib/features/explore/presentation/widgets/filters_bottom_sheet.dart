@@ -51,11 +51,11 @@ class _FiltersBottomSheetState extends ConsumerState<FiltersBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Material( // Precisamos de Material aqui se estiver no showModalBottomSheet para ListTiles funcionarem
+    return Material(
       color: Colors.white,
       child: SafeArea(
         child: SizedBox(
-          height: MediaQuery.of(context).size.height * 0.95,
+          height: MediaQuery.of(context).size.height,
           child: Column(
             children: [
               _buildHeader(),
@@ -138,9 +138,6 @@ class _FiltersBottomSheetState extends ConsumerState<FiltersBottomSheet> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))
-        ],
       ),
       child: DsButton(
         label: 'Mostrar Resultados',
