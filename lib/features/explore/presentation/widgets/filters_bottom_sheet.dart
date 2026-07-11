@@ -220,7 +220,7 @@ class _FiltersBottomSheetState extends ConsumerState<FiltersBottomSheet> {
             onTap: item['onTap'] as VoidCallback,
             child: Container(
               decoration: BoxDecoration(
-                border: Border.all(color: isSelected ? const Color(0xFF00AEEF) : Colors.grey[300]!, width: 2),
+                border: Border.all(color: isSelected ? const Color(0xFF00AEEF) : Colors.grey, width: 0.5),
                 borderRadius: BorderRadius.circular(12),
                 color: isSelected ? const Color(0xFF00AEEF).withOpacity(0.05) : Colors.transparent,
               ),
@@ -344,7 +344,7 @@ class _FiltersBottomSheetState extends ConsumerState<FiltersBottomSheet> {
       onSelected: (_) => onSelected(),
       selectedColor: const Color(0xFF00AEEF).withOpacity(0.2),
       checkmarkColor: const Color(0xFF00AEEF),
-      side: BorderSide(color: isSelected ? const Color(0xFF00AEEF) : Colors.grey[300]!),
+      side: BorderSide(color: isSelected ? const Color(0xFF00AEEF) : Colors.grey, width: 0.5),
       labelStyle: TextStyle(
         color: isSelected ? const Color(0xFF00AEEF) : Colors.black87,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -360,7 +360,7 @@ class _FiltersBottomSheetState extends ConsumerState<FiltersBottomSheet> {
       onSelected: (_) => onSelected(),
       selectedColor: const Color(0xFF00AEEF).withOpacity(0.2),
       checkmarkColor: const Color(0xFF00AEEF),
-      side: BorderSide(color: isSelected ? const Color(0xFF00AEEF) : Colors.grey[300]!),
+      side: BorderSide(color: isSelected ? const Color(0xFF00AEEF) : Colors.grey, width: 0.5),
       labelStyle: TextStyle(
         color: isSelected ? const Color(0xFF00AEEF) : Colors.black87,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
