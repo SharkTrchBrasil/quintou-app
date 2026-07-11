@@ -143,7 +143,7 @@ class _FiltersBottomSheetState extends ConsumerState<FiltersBottomSheet> {
         ],
       ),
       child: DsButton(
-        text: 'Mostrar Resultados',
+        label: 'Mostrar Resultados',
         onPressed: _applyFilters,
       ),
     );

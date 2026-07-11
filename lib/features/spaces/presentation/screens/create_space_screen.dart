@@ -105,7 +105,7 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: DsButton(
-                text: _currentPage == _totalPages - 1 ? 'Publicar Espaço' : 'Próximo',
+                label: _currentPage == _totalPages - 1 ? 'Publicar Espaço' : 'Próximo',
                 isLoading: state.isLoading,
                 onPressed: _nextPage,
               ),
