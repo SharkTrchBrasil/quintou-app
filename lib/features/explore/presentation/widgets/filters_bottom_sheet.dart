@@ -61,7 +61,7 @@ class _FiltersBottomSheetState extends ConsumerState<FiltersBottomSheet> {
               _buildHeader(),
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 24.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -107,7 +107,7 @@ class _FiltersBottomSheetState extends ConsumerState<FiltersBottomSheet> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
       ),
@@ -135,7 +135,7 @@ class _FiltersBottomSheetState extends ConsumerState<FiltersBottomSheet> {
 
   Widget _buildFooter() {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 24),
       decoration: BoxDecoration(
         color: Colors.white,
       ),
