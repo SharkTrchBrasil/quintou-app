@@ -3,40 +3,71 @@ import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:quintou_app/core/providers/providers.dart';
 
-class CreateSpaceState {
-  // Passo 1: O que
+class AvailabilityRule {
+  final int dayOfWeek;
+  final String startTime;
+  final String endTime;
+
+  AvailabilityRule({required this.dayOfWeek, required this.startTime, required this.endTime});
+  
+  Map<String, dynamic> toJson() => {
+    "day_of_week": dayOfWeek,
+    "start_time": startTime,
+    "end_time": endTime,
+    "is_available": true
+  };
+}
+
+class CategoryModel {
+  final String id;
+  final String name;
+  final String slug;
+  final String icon;
   final String listingType;
-  final String category;
+
+  CategoryModel({required this.id, required this.name, required this.slug, required this.icon, required this.listingType});
+
+  factory CategoryModel.fromJson(Map<String, dynamic> json) {
+    return CategoryModel(
+      id: json['id'],
+      name: json['name'],
+      slug: json['slug'],
+      icon: json['icon'],
+      listingType: json['listing_type'],
+    );
+  }
+}
+
+class CreateSpaceState {
+  // Step 0: Categoria
+  final String? categoryId;
+  final String listingType;
+  final List<CategoryModel> availableCategories;
+
+  // Step 1: Titulo e Descrição
   final String title;
   final String description;
 
-  // Passo 2: Onde
+  // Step 2: Localização / Entrega
   final String zipCode;
   final String addressLine;
   final String city;
   final String state;
   final String neighborhood;
+  
+  final bool deliveryAvailable;
+  final double deliveryFee;
+  final int deliveryRadiusKm;
 
-  // Passo 3: Detalhes
+  // Step 3: Capacidade
   final int maxGuests;
   final bool isOutdoor;
   final String spaceType;
   final double sizeLength;
   final double sizeWidth;
   final String privacyLevel;
-  final String checkInType;
 
-  // Passo 4: Comodidades & Extras
-  final List<String> amenities;
-  final List<String> tags;
-  final bool hasRestroom;
-  final bool hasParking;
-  final int parkingCapacity;
-  final bool isAdaFriendly;
-  final bool hasHeatedPool;
-  final bool hasHotTub;
-
-  // Passo 5: Regras
+  // Step 4: Regras
   final bool allowsParties;
   final bool allowsSmoking;
   final bool allowsPets;
@@ -45,44 +76,56 @@ class CreateSpaceState {
   final bool allowsLoudMusic;
   final bool allowsCommercial;
 
-  // Passo 6: Preço
+  // Step 5: Comodidades
+  final List<String> amenities;
+  final List<String> tags;
+  final bool hasRestroom;
+  final bool hasParking;
+  final bool isAdaFriendly;
+  final bool hasHeatedPool;
+  final bool hasHotTub;
+
+  // Step 6: Imagens
+  final List<XFile> images;
+
+  // Step 7: Disponibilidade
+  final List<AvailabilityRule> availabilityRules;
+  final int minHours;
+  final int maxHours;
+
+  // Step 8: Preço
   final double price;
   final String pricingMode;
-  final int weekdayDiscountPercent;
   final String cancellationPolicy;
   final bool requiresApproval;
-
-  // Passo 8: Imagens
-  final List<XFile> images;
+  final double securityDeposit;
 
   final bool isLoading;
   final String? error;
 
   CreateSpaceState({
+    this.categoryId,
     this.listingType = 'SPACE',
-    this.category = 'PISCINA',
+    this.availableCategories = const [],
     this.title = '',
     this.description = '',
+    
     this.zipCode = '',
     this.addressLine = '',
     this.city = '',
     this.state = '',
     this.neighborhood = '',
+    this.deliveryAvailable = false,
+    this.deliveryFee = 0.0,
+    this.deliveryRadiusKm = 10,
+    
     this.maxGuests = 10,
     this.isOutdoor = true,
     this.spaceType = 'Cloro',
-    this.sizeLength = 0,
-    this.sizeWidth = 0,
+    this.sizeLength = 0.0,
+    this.sizeWidth = 0.0,
     this.privacyLevel = 'Standard',
-    this.checkInType = 'Meet host',
-    this.amenities = const [],
-    this.tags = const [],
-    this.hasRestroom = false,
-    this.hasParking = false,
-    this.parkingCapacity = 0,
-    this.isAdaFriendly = false,
-    this.hasHeatedPool = false,
-    this.hasHotTub = false,
+    
     this.allowsParties = false,
     this.allowsSmoking = false,
     this.allowsPets = false,
@@ -90,28 +133,48 @@ class CreateSpaceState {
     this.allowsAlcohol = false,
     this.allowsLoudMusic = false,
     this.allowsCommercial = false,
+    
+    this.amenities = const [],
+    this.tags = const [],
+    this.hasRestroom = false,
+    this.hasParking = false,
+    this.isAdaFriendly = false,
+    this.hasHeatedPool = false,
+    this.hasHotTub = false,
+    
+    this.images = const [],
+    
+    this.availabilityRules = const [],
+    this.minHours = 2,
+    this.maxHours = 12,
+    
     this.price = 50.0,
     this.pricingMode = 'PER_HOUR',
-    this.weekdayDiscountPercent = 0,
     this.cancellationPolicy = 'FLEXIVEL',
     this.requiresApproval = true,
-    this.images = const [],
+    this.securityDeposit = 0.0,
+    
     this.isLoading = false,
     this.error,
   });
 
   CreateSpaceState copyWith({
-    String? listingType, String? category, String? title, String? description,
+    String? categoryId, String? listingType, List<CategoryModel>? availableCategories,
+    String? title, String? description,
     String? zipCode, String? addressLine, String? city, String? state, String? neighborhood,
-    int? maxGuests, bool? isOutdoor, String? spaceType, double? sizeLength, double? sizeWidth, String? privacyLevel, String? checkInType,
-    List<String>? amenities, List<String>? tags, bool? hasRestroom, bool? hasParking, int? parkingCapacity, bool? isAdaFriendly, bool? hasHeatedPool, bool? hasHotTub,
+    bool? deliveryAvailable, double? deliveryFee, int? deliveryRadiusKm,
+    int? maxGuests, bool? isOutdoor, String? spaceType, double? sizeLength, double? sizeWidth, String? privacyLevel,
     bool? allowsParties, bool? allowsSmoking, bool? allowsPets, bool? allowsChildren, bool? allowsAlcohol, bool? allowsLoudMusic, bool? allowsCommercial,
-    double? price, String? pricingMode, int? weekdayDiscountPercent, String? cancellationPolicy, bool? requiresApproval,
-    List<XFile>? images, bool? isLoading, String? error,
+    List<String>? amenities, List<String>? tags, bool? hasRestroom, bool? hasParking, bool? isAdaFriendly, bool? hasHeatedPool, bool? hasHotTub,
+    List<XFile>? images,
+    List<AvailabilityRule>? availabilityRules, int? minHours, int? maxHours,
+    double? price, String? pricingMode, String? cancellationPolicy, bool? requiresApproval, double? securityDeposit,
+    bool? isLoading, String? error,
   }) {
     return CreateSpaceState(
+      categoryId: categoryId ?? this.categoryId,
       listingType: listingType ?? this.listingType,
-      category: category ?? this.category,
+      availableCategories: availableCategories ?? this.availableCategories,
       title: title ?? this.title,
       description: description ?? this.description,
       zipCode: zipCode ?? this.zipCode,
@@ -119,21 +182,15 @@ class CreateSpaceState {
       city: city ?? this.city,
       state: state ?? this.state,
       neighborhood: neighborhood ?? this.neighborhood,
+      deliveryAvailable: deliveryAvailable ?? this.deliveryAvailable,
+      deliveryFee: deliveryFee ?? this.deliveryFee,
+      deliveryRadiusKm: deliveryRadiusKm ?? this.deliveryRadiusKm,
       maxGuests: maxGuests ?? this.maxGuests,
       isOutdoor: isOutdoor ?? this.isOutdoor,
       spaceType: spaceType ?? this.spaceType,
       sizeLength: sizeLength ?? this.sizeLength,
       sizeWidth: sizeWidth ?? this.sizeWidth,
       privacyLevel: privacyLevel ?? this.privacyLevel,
-      checkInType: checkInType ?? this.checkInType,
-      amenities: amenities ?? this.amenities,
-      tags: tags ?? this.tags,
-      hasRestroom: hasRestroom ?? this.hasRestroom,
-      hasParking: hasParking ?? this.hasParking,
-      parkingCapacity: parkingCapacity ?? this.parkingCapacity,
-      isAdaFriendly: isAdaFriendly ?? this.isAdaFriendly,
-      hasHeatedPool: hasHeatedPool ?? this.hasHeatedPool,
-      hasHotTub: hasHotTub ?? this.hasHotTub,
       allowsParties: allowsParties ?? this.allowsParties,
       allowsSmoking: allowsSmoking ?? this.allowsSmoking,
       allowsPets: allowsPets ?? this.allowsPets,
@@ -141,12 +198,22 @@ class CreateSpaceState {
       allowsAlcohol: allowsAlcohol ?? this.allowsAlcohol,
       allowsLoudMusic: allowsLoudMusic ?? this.allowsLoudMusic,
       allowsCommercial: allowsCommercial ?? this.allowsCommercial,
+      amenities: amenities ?? this.amenities,
+      tags: tags ?? this.tags,
+      hasRestroom: hasRestroom ?? this.hasRestroom,
+      hasParking: hasParking ?? this.hasParking,
+      isAdaFriendly: isAdaFriendly ?? this.isAdaFriendly,
+      hasHeatedPool: hasHeatedPool ?? this.hasHeatedPool,
+      hasHotTub: hasHotTub ?? this.hasHotTub,
+      images: images ?? this.images,
+      availabilityRules: availabilityRules ?? this.availabilityRules,
+      minHours: minHours ?? this.minHours,
+      maxHours: maxHours ?? this.maxHours,
       price: price ?? this.price,
       pricingMode: pricingMode ?? this.pricingMode,
-      weekdayDiscountPercent: weekdayDiscountPercent ?? this.weekdayDiscountPercent,
       cancellationPolicy: cancellationPolicy ?? this.cancellationPolicy,
       requiresApproval: requiresApproval ?? this.requiresApproval,
-      images: images ?? this.images,
+      securityDeposit: securityDeposit ?? this.securityDeposit,
       isLoading: isLoading ?? this.isLoading,
       error: error,
     );
@@ -156,23 +223,41 @@ class CreateSpaceState {
 class CreateSpaceNotifier extends StateNotifier<CreateSpaceState> {
   final Dio _dio;
 
-  CreateSpaceNotifier(this._dio) : super(CreateSpaceState());
+  CreateSpaceNotifier(this._dio) : super(CreateSpaceState()) {
+    fetchCategories();
+  }
+
+  Future<void> fetchCategories() async {
+    try {
+      final response = await _dio.get('/categories');
+      final categories = (response.data as List).map((c) => CategoryModel.fromJson(c)).toList();
+      state = state.copyWith(availableCategories: categories);
+    } catch (e) {
+      print("Erro ao carregar categorias: $e");
+    }
+  }
 
   void updateField({
-    String? listingType, String? category, String? title, String? description,
+    String? categoryId, String? listingType,
+    String? title, String? description,
     String? zipCode, String? addressLine, String? city, String? state, String? neighborhood,
-    int? maxGuests, bool? isOutdoor, String? spaceType, double? sizeLength, double? sizeWidth, String? privacyLevel, String? checkInType,
-    List<String>? amenities, List<String>? tags, bool? hasRestroom, bool? hasParking, int? parkingCapacity, bool? isAdaFriendly, bool? hasHeatedPool, bool? hasHotTub,
+    bool? deliveryAvailable, double? deliveryFee, int? deliveryRadiusKm,
+    int? maxGuests, bool? isOutdoor, String? spaceType, double? sizeLength, double? sizeWidth, String? privacyLevel,
     bool? allowsParties, bool? allowsSmoking, bool? allowsPets, bool? allowsChildren, bool? allowsAlcohol, bool? allowsLoudMusic, bool? allowsCommercial,
-    double? price, String? pricingMode, int? weekdayDiscountPercent, String? cancellationPolicy, bool? requiresApproval,
+    List<String>? amenities, List<String>? tags, bool? hasRestroom, bool? hasParking, bool? isAdaFriendly, bool? hasHeatedPool, bool? hasHotTub,
+    List<AvailabilityRule>? availabilityRules, int? minHours, int? maxHours,
+    double? price, String? pricingMode, String? cancellationPolicy, bool? requiresApproval, double? securityDeposit,
   }) {
     state = state.copyWith(
-      listingType: listingType, category: category, title: title, description: description,
+      categoryId: categoryId, listingType: listingType,
+      title: title, description: description,
       zipCode: zipCode, addressLine: addressLine, city: city, state: state, neighborhood: neighborhood,
-      maxGuests: maxGuests, isOutdoor: isOutdoor, spaceType: spaceType, sizeLength: sizeLength, sizeWidth: sizeWidth, privacyLevel: privacyLevel, checkInType: checkInType,
-      amenities: amenities, tags: tags, hasRestroom: hasRestroom, hasParking: hasParking, parkingCapacity: parkingCapacity, isAdaFriendly: isAdaFriendly, hasHeatedPool: hasHeatedPool, hasHotTub: hasHotTub,
+      deliveryAvailable: deliveryAvailable, deliveryFee: deliveryFee, deliveryRadiusKm: deliveryRadiusKm,
+      maxGuests: maxGuests, isOutdoor: isOutdoor, spaceType: spaceType, sizeLength: sizeLength, sizeWidth: sizeWidth, privacyLevel: privacyLevel,
       allowsParties: allowsParties, allowsSmoking: allowsSmoking, allowsPets: allowsPets, allowsChildren: allowsChildren, allowsAlcohol: allowsAlcohol, allowsLoudMusic: allowsLoudMusic, allowsCommercial: allowsCommercial,
-      price: price, pricingMode: pricingMode, weekdayDiscountPercent: weekdayDiscountPercent, cancellationPolicy: cancellationPolicy, requiresApproval: requiresApproval,
+      amenities: amenities, tags: tags, hasRestroom: hasRestroom, hasParking: hasParking, isAdaFriendly: isAdaFriendly, hasHeatedPool: hasHeatedPool, hasHotTub: hasHotTub,
+      availabilityRules: availabilityRules, minHours: minHours, maxHours: maxHours,
+      price: price, pricingMode: pricingMode, cancellationPolicy: cancellationPolicy, requiresApproval: requiresApproval, securityDeposit: securityDeposit,
     );
   }
 
@@ -188,6 +273,10 @@ class CreateSpaceNotifier extends StateNotifier<CreateSpaceState> {
     if (list.contains(tag)) list.remove(tag);
     else list.add(tag);
     state = state.copyWith(tags: list);
+  }
+  
+  void setAvailabilityRules(List<AvailabilityRule> rules) {
+    state = state.copyWith(availabilityRules: rules);
   }
 
   void addImages(List<XFile> newImages) {
@@ -224,21 +313,32 @@ class CreateSpaceNotifier extends StateNotifier<CreateSpaceState> {
   }
 
   Future<bool> submit() async {
+    if (state.categoryId == null) {
+      state = state.copyWith(error: "Selecione uma categoria");
+      return false;
+    }
+    
     state = state.copyWith(isLoading: true, error: null);
     try {
       final payload = {
         "listing_type": state.listingType,
         "title": state.title,
         "description": state.description,
-        "category_id": "00000000-0000-0000-0000-000000000000", // Categoria temporária
+        "category_id": state.categoryId,
         "address_line": state.addressLine,
         "city": state.city,
         "state": state.state,
         "zip_code": state.zipCode,
         "neighborhood": state.neighborhood,
+        
+        "delivery_available": state.deliveryAvailable,
+        "delivery_fee": state.deliveryFee,
+        "delivery_radius_km": state.deliveryRadiusKm,
+        
         "pricing_mode": state.pricingMode,
         "price": state.price,
         "price_per_hour": state.price,
+        "security_deposit": state.securityDeposit,
         
         "max_guests": state.maxGuests,
         "is_outdoor": state.isOutdoor,
@@ -246,13 +346,11 @@ class CreateSpaceNotifier extends StateNotifier<CreateSpaceState> {
         "size_length": state.sizeLength,
         "size_width": state.sizeWidth,
         "privacy_level": state.privacyLevel,
-        "check_in_type": state.checkInType,
         
         "amenities": state.amenities,
         "tags": state.tags,
         "has_restroom": state.hasRestroom,
         "has_parking": state.hasParking,
-        "parking_capacity": state.parkingCapacity,
         "is_ada_friendly": state.isAdaFriendly,
         "has_heated_pool": state.hasHeatedPool,
         "has_hot_tub": state.hasHotTub,
@@ -265,9 +363,11 @@ class CreateSpaceNotifier extends StateNotifier<CreateSpaceState> {
         "allows_loud_music": state.allowsLoudMusic,
         "allows_commercial": state.allowsCommercial,
         
-        "weekday_discount_percent": state.weekdayDiscountPercent,
         "cancellation_policy": state.cancellationPolicy,
         "requires_approval": state.requiresApproval,
+        "min_hours": state.minHours,
+        "max_hours": state.maxHours,
+        "availability_rules": state.availabilityRules.map((r) => r.toJson()).toList(),
       };
 
       final response = await _dio.post('/spaces', data: payload);
@@ -275,12 +375,35 @@ class CreateSpaceNotifier extends StateNotifier<CreateSpaceState> {
 
       for (int i = 0; i < state.images.length; i++) {
         final file = state.images[i];
+        
+        // Simular upload de URL via backend de form data que foi deixado temporário no backend
         FormData formData = FormData.fromMap({
-          "file": await MultipartFile.fromFile(file.path, filename: file.name),
+          "url": "https://placehold.co/600x400/00AEEF/FFF?text=Foto+$i", // mock pois S3 não tá configurado
           "is_cover": i == 0,
           "order": i,
+          "media_type": "IMAGE"
         });
-        await _dio.post('/spaces/$spaceId/images', data: formData);
+        
+        try {
+            await _dio.post(
+                '/spaces/$spaceId/images', 
+                data: formData,
+                options: Options(
+                    headers: {'Content-Type': 'application/json'},
+                )
+            );
+        } catch (e) {
+            // Em dev, se o endpoint de FormData falhar, tenta mandar JSON direto:
+            await _dio.post(
+                '/spaces/$spaceId/images', 
+                data: {
+                  "url": "https://placehold.co/600x400/00AEEF/FFF?text=Foto+$i",
+                  "is_cover": i == 0,
+                  "order": i,
+                  "media_type": "IMAGE"
+                }
+            );
+        }
       }
 
       state = state.copyWith(isLoading: false);
