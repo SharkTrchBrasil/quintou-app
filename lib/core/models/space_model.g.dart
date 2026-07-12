@@ -40,8 +40,67 @@ Space _$SpaceFromJson(Map<String, dynamic> json) => Space(
       ?.map((e) => SpaceImage.fromJson(e as Map<String, dynamic>))
       .toList() ?? [],
   amenities: (json['amenities'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+  tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+  // Host
   hostName: _hostNameFromJson(json['host']),
   hostAvatar: _hostAvatarFromJson(json['host']),
+  isVerifiedHost: _hostVerifiedFromJson(json['host']),
+  isProHost: _hostProFromJson(json['host']),
+  hostRating: _hostRatingFromJson(json['host']),
+  hostTotalReviews: _hostReviewsFromJson(json['host']),
+  // Space details
+  spaceType: json['spaceType'] as String? ?? '',
+  sizeLength: (json['sizeLength'] as num?)?.toDouble() ?? 0.0,
+  sizeWidth: (json['sizeWidth'] as num?)?.toDouble() ?? 0.0,
+  depthMin: (json['depthMin'] as num?)?.toDouble(),
+  depthMax: (json['depthMax'] as num?)?.toDouble(),
+  isOutdoor: json['isOutdoor'] as bool? ?? false,
+  isAdaFriendly: json['isAdaFriendly'] as bool? ?? false,
+  accessibilityDescription: json['accessibilityDescription'] as String?,
+  // Rules
+  allowsParties: json['allowsParties'] as bool? ?? false,
+  allowsSmoking: json['allowsSmoking'] as bool? ?? false,
+  allowsAlcohol: json['allowsAlcohol'] as bool? ?? false,
+  allowsLoudMusic: json['allowsLoudMusic'] as bool? ?? false,
+  allowsCommercial: json['allowsCommercial'] as bool? ?? false,
+  allowsPets: json['allowsPets'] as bool? ?? false,
+  petRules: json['petRules'] as String?,
+  allowsChildren: json['allowsChildren'] as bool? ?? true,
+  allowsInfants: json['allowsInfants'] as bool? ?? true,
+  rules: json['rules'] as String?,
+  hasHeatedPool: json['hasHeatedPool'] as bool? ?? false,
+  hasHotTub: json['hasHotTub'] as bool? ?? false,
+  // Infrastructure
+  hasRestroom: json['hasRestroom'] as bool? ?? false,
+  restroomDescription: json['restroomDescription'] as String?,
+  hasParking: json['hasParking'] as bool? ?? false,
+  parkingDescription: json['parkingDescription'] as String?,
+  parkingCapacity: (json['parkingCapacity'] as num?)?.toInt(),
+  hasStreetParking: json['hasStreetParking'] as bool? ?? false,
+  hasPaidParking: json['hasPaidParking'] as bool? ?? false,
+  hasParkingLot: json['hasParkingLot'] as bool? ?? false,
+  // Privacy
+  privacyLevel: json['privacyLevel'] as String? ?? 'Standard',
+  privacyDescription: json['privacyDescription'] as String?,
+  // Booking
+  minHours: (json['minHours'] as num?)?.toInt() ?? 2,
+  maxHours: (json['maxHours'] as num?)?.toInt() ?? 12,
+  cancellationPolicy: json['cancellationPolicy'] as String? ?? 'FLEXIVEL',
+  cancellationHoursBefore: (json['cancellationHoursBefore'] as num?)?.toInt() ?? 24,
+  securityDeposit: (json['securityDeposit'] != null ? double.tryParse(json['securityDeposit'].toString()) : 0.0) ?? 0.0,
+  requiresApproval: json['requiresApproval'] as bool? ?? true,
+  // Location
+  addressLine: json['addressLine'] as String? ?? '',
+  neighborhood: json['neighborhood'] as String? ?? '',
+  zipCode: json['zipCode'] as String? ?? '',
+  // Delivery
+  deliveryAvailable: json['deliveryAvailable'] as bool? ?? false,
+  deliveryFee: (json['deliveryFee'] != null ? double.tryParse(json['deliveryFee'].toString()) : 0.0) ?? 0.0,
+  deliveryRadiusKm: (json['deliveryRadiusKm'] as num?)?.toInt() ?? 10,
+  // Status
+  isFeatured: json['isFeatured'] as bool? ?? false,
+  isHighlyRebooked: json['isHighlyRebooked'] as bool? ?? false,
+  totalViews: (json['totalViews'] as num?)?.toInt() ?? 0,
 );
 
 Map<String, dynamic> _$SpaceToJson(Space instance) => <String, dynamic>{
@@ -63,6 +122,5 @@ Map<String, dynamic> _$SpaceToJson(Space instance) => <String, dynamic>{
   'totalReviews': instance.totalReviews,
   'images': instance.images,
   'amenities': instance.amenities,
-  'hostName': instance.hostName,
-  'hostAvatar': instance.hostAvatar,
+  'tags': instance.tags,
 };
