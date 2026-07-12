@@ -29,6 +29,7 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
   final _cityCtrl = TextEditingController();
   final _stateCtrl = TextEditingController();
   final _neighborhoodCtrl = TextEditingController();
+  final _referencePointCtrl = TextEditingController();
   final _priceCtrl = TextEditingController(text: '50');
   
   // Custom theme colors
@@ -378,6 +379,8 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
               Expanded(child: DsTextField(title: 'Estado', controller: _stateCtrl, onChanged: (val) => notifier.updateField(stateValue: val))),
             ],
           ),
+          const SizedBox(height: 16),
+          DsTextField(title: 'Ponto de Referência', controller: _referencePointCtrl, onChanged: (val) => notifier.updateField(referencePoint: val)),
           
           if (state.listingType == 'EQUIPMENT') ...[
             const Divider(height: 48),

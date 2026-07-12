@@ -53,6 +53,7 @@ class CreateSpaceState {
   final String city;
   final String state;
   final String neighborhood;
+  final String referencePoint;
   
   final bool deliveryAvailable;
   final double deliveryFee;
@@ -113,6 +114,7 @@ class CreateSpaceState {
     this.city = '',
     this.state = '',
     this.neighborhood = '',
+    this.referencePoint = '',
     this.deliveryAvailable = false,
     this.deliveryFee = 0.0,
     this.deliveryRadiusKm = 10,
@@ -159,7 +161,7 @@ class CreateSpaceState {
   CreateSpaceState copyWith({
     String? categoryId, String? listingType,
     String? title, String? description,
-    String? zipCode, String? addressLine, String? city, String? state, String? neighborhood,
+    String? zipCode, String? addressLine, String? city, String? state, String? neighborhood, String? referencePoint,
     bool? deliveryAvailable, double? deliveryFee, int? deliveryRadiusKm,
     int? maxGuests, bool? isOutdoor, String? spaceType, double? sizeLength, double? sizeWidth, String? privacyLevel,
     bool? allowsParties, bool? allowsSmoking, bool? allowsPets, bool? allowsChildren, bool? allowsAlcohol, bool? allowsLoudMusic, bool? allowsCommercial,
@@ -179,6 +181,7 @@ class CreateSpaceState {
       city: city ?? this.city,
       state: state ?? this.state,
       neighborhood: neighborhood ?? this.neighborhood,
+      referencePoint: referencePoint ?? this.referencePoint,
       deliveryAvailable: deliveryAvailable ?? this.deliveryAvailable,
       deliveryFee: deliveryFee ?? this.deliveryFee,
       deliveryRadiusKm: deliveryRadiusKm ?? this.deliveryRadiusKm,
@@ -228,7 +231,7 @@ class CreateSpaceNotifier extends Notifier<CreateSpaceState> {
   void updateField({
     String? categoryId, String? listingType,
     String? title, String? description,
-    String? zipCode, String? addressLine, String? city, String? stateValue, String? neighborhood,
+    String? zipCode, String? addressLine, String? city, String? stateValue, String? neighborhood, String? referencePoint,
     bool? deliveryAvailable, double? deliveryFee, int? deliveryRadiusKm,
     int? maxGuests, bool? isOutdoor, String? spaceType, double? sizeLength, double? sizeWidth, String? privacyLevel,
     bool? allowsParties, bool? allowsSmoking, bool? allowsPets, bool? allowsChildren, bool? allowsAlcohol, bool? allowsLoudMusic, bool? allowsCommercial,
@@ -239,7 +242,7 @@ class CreateSpaceNotifier extends Notifier<CreateSpaceState> {
     this.state = this.state.copyWith(
       categoryId: categoryId, listingType: listingType,
       title: title, description: description,
-      zipCode: zipCode, addressLine: addressLine, city: city, state: stateValue, neighborhood: neighborhood,
+      zipCode: zipCode, addressLine: addressLine, city: city, state: stateValue, neighborhood: neighborhood, referencePoint: referencePoint,
       deliveryAvailable: deliveryAvailable, deliveryFee: deliveryFee, deliveryRadiusKm: deliveryRadiusKm,
       maxGuests: maxGuests, isOutdoor: isOutdoor, spaceType: spaceType, sizeLength: sizeLength, sizeWidth: sizeWidth, privacyLevel: privacyLevel,
       allowsParties: allowsParties, allowsSmoking: allowsSmoking, allowsPets: allowsPets, allowsChildren: allowsChildren, allowsAlcohol: allowsAlcohol, allowsLoudMusic: allowsLoudMusic, allowsCommercial: allowsCommercial,
@@ -318,6 +321,7 @@ class CreateSpaceNotifier extends Notifier<CreateSpaceState> {
         "state": state.state,
         "zip_code": state.zipCode,
         "neighborhood": state.neighborhood,
+        "reference_point": state.referencePoint,
         
         "delivery_available": state.deliveryAvailable,
         "delivery_fee": state.deliveryFee,
