@@ -4,6 +4,7 @@ import 'package:quintou_app/core/repositories/auth_repository.dart';
 import 'package:quintou_app/core/repositories/space_repository.dart';
 import 'package:quintou_app/core/repositories/booking_repository.dart';
 import 'package:quintou_app/core/repositories/chat_repository.dart';
+import 'package:quintou_app/core/repositories/host_repository.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) {
   return ApiClient();
@@ -28,3 +29,9 @@ final chatRepositoryProvider = Provider<ChatRepository>((ref) {
   final apiClient = ref.watch(apiClientProvider);
   return ChatRepository(apiClient);
 });
+
+final hostRepositoryProvider = Provider<HostRepository>((ref) {
+  final apiClient = ref.watch(apiClientProvider);
+  return HostRepository(apiClient);
+});
+

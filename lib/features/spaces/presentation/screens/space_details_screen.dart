@@ -2,15 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quintou_app/core/models/space_model.dart';
+import 'package:quintou_app/core/providers/providers.dart';
 import 'package:quintou_app/features/auth/presentation/providers/auth_provider.dart';
 
-class SpaceDetailsScreen extends ConsumerWidget {
+class SpaceDetailsScreen extends ConsumerStatefulWidget {
   final Space space;
 
   const SpaceDetailsScreen({super.key, required this.space});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SpaceDetailsScreen> createState() => _SpaceDetailsScreenState();
+}
+
+class _SpaceDetailsScreenState extends ConsumerState<SpaceDetailsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Incrementar views ao abrir os detalhes
+    Future.microtask(() {
+      ref.read(hostRepositoryProvider).incrementSpaceViews(widget.space.id);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final space = widget.space;
     final authState = ref.watch(authProvider);
 
     return Scaffold(
