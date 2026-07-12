@@ -6,6 +6,7 @@ import 'package:quintou_app/features/auth/presentation/screens/register_screen.d
 import 'package:quintou_app/features/spaces/presentation/screens/space_details_screen.dart';
 import 'package:quintou_app/features/profile/presentation/screens/profile_screen.dart';
 import 'package:quintou_app/features/bookings/presentation/screens/booking_setup_screen.dart';
+import 'package:quintou_app/features/spaces/presentation/screens/create_space_screen.dart';
 import 'package:quintou_app/core/shell/app_shell.dart';
 import 'package:quintou_app/core/models/space_model.dart';
 
@@ -45,6 +46,10 @@ final goRouter = GoRouter(
         final space = state.extra as Space;
         return BookingSetupScreen(space: space);
       },
+    ),
+    GoRoute(
+      path: '/create-space',
+      builder: (context, state) => const CreateSpaceScreen(),
     ),
   ],
 );
