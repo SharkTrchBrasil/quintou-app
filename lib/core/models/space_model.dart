@@ -24,6 +24,7 @@ class Space {
   final String hostId;
   final String title;
   final String description;
+  @JsonKey(fromJson: _categoryFromJson)
   final String category;
   final String listingType;
   final String pricingType;
@@ -37,6 +38,11 @@ class Space {
   final double averageRating;
   final int totalReviews;
   final List<SpaceImage> images;
+  final List<String> amenities;
+  @JsonKey(fromJson: _hostNameFromJson)
+  final String hostName;
+  @JsonKey(fromJson: _hostAvatarFromJson)
+  final String hostAvatar;
 
   Space({
     required this.id,
@@ -56,8 +62,32 @@ class Space {
     required this.averageRating,
     required this.totalReviews,
     required this.images,
+    required this.amenities,
+    required this.hostName,
+    required this.hostAvatar,
   });
 
   factory Space.fromJson(Map<String, dynamic> json) => _$SpaceFromJson(json);
   Map<String, dynamic> toJson() => _$SpaceToJson(this);
+}
+
+String _categoryFromJson(dynamic json) {
+  if (json is Map) {
+    return json['name'] as String? ?? '';
+  }
+  return json as String? ?? '';
+}
+
+String _hostNameFromJson(dynamic json) {
+  if (json is Map) {
+    return json['fullName'] as String? ?? 'Anfitrião';
+  }
+  return 'Anfitrião';
+}
+
+String _hostAvatarFromJson(dynamic json) {
+  if (json is Map) {
+    return json['avatarUrl'] as String? ?? '';
+  }
+  return '';
 }

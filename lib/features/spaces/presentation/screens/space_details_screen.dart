@@ -107,7 +107,41 @@ class _SpaceDetailsScreenState extends ConsumerState<SpaceDetailsScreen> {
                     'O que o espaço oferece',
                     style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
-                  // TODO: Lista de comodidades
+                  const SizedBox(height: 12),
+                  if (space.amenities.isEmpty)
+                    Text('Nenhuma comodidade informada.', style: TextStyle(color: Colors.grey.shade600))
+                  else
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: space.amenities.map((amenity) => Chip(
+                        label: Text(amenity),
+                        backgroundColor: Colors.grey.shade100,
+                        side: BorderSide.none,
+                      )).toList(),
+                    ),
+                  const Divider(height: 40),
+                  Text(
+                    'Anfitrião',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundImage: space.hostAvatar.isNotEmpty ? NetworkImage(space.hostAvatar) : null,
+                        child: space.hostAvatar.isEmpty ? const Icon(Icons.person, color: Colors.grey) : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          space.hostName,
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 100), // padding para o bottom bar
                 ],
               ),

@@ -365,36 +365,32 @@ class CreateSpaceNotifier extends Notifier<CreateSpaceState> {
       final response = await _dio.post('/spaces', data: payload);
       final spaceId = response.data['id'];
 
-      for (int i = 0; i < state.images.length; i++) {
-        final file = state.images[i];
-        
-        // Simular upload de URL via backend de form data que foi deixado temporário no backend
-        FormData formData = FormData.fromMap({
-          "url": "https://placehold.co/600x400/00AEEF/FFF?text=Foto+$i", // mock pois S3 não tá configurado
-          "is_cover": i == 0,
-          "order": i,
-          "media_type": "IMAGE"
-        });
-        
+      // Upload real das imagens para o S3 via multipart
+      if (state.images.isNotEmpty) {
+        final formData = FormData();
+        for (int i = 0; i < state.images.length; i++) {
+          final file = state.images[i];
+          formData.files.add(MapEntry(
+            'images',
+            await MultipartFile.fromFile(
+              file.path,
+              filename: file.name,
+            ),
+          ));
+        }
+
         try {
-            await _dio.post(
-                '/spaces/$spaceId/images', 
-                data: formData,
-                options: Options(
-                    headers: {'Content-Type': 'application/json'},
-                )
-            );
+          await _dio.post(
+            '/upload/spaces/$spaceId/media',
+            data: formData,
+            options: Options(
+              headers: {'Content-Type': 'multipart/form-data'},
+            ),
+          );
         } catch (e) {
-            // Em dev, se o endpoint de FormData falhar, tenta mandar JSON direto:
-            await _dio.post(
-                '/spaces/$spaceId/images', 
-                data: {
-                  "url": "https://placehold.co/600x400/00AEEF/FFF?text=Foto+$i",
-                  "is_cover": i == 0,
-                  "order": i,
-                  "media_type": "IMAGE"
-                }
-            );
+          // Se o upload falhar, não impede a criação do espaço
+          // As imagens podem ser adicionadas depois
+          print('Erro no upload de imagens: $e');
         }
       }
 
