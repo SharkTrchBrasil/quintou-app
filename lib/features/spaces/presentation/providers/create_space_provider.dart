@@ -42,7 +42,6 @@ class CreateSpaceState {
   // Step 0: Categoria
   final String? categoryId;
   final String listingType;
-  final List<CategoryModel> availableCategories;
 
   // Step 1: Titulo e Descrição
   final String title;
@@ -106,7 +105,6 @@ class CreateSpaceState {
   CreateSpaceState({
     this.categoryId,
     this.listingType = 'SPACE',
-    this.availableCategories = const [],
     this.title = '',
     this.description = '',
     
@@ -159,7 +157,7 @@ class CreateSpaceState {
   });
 
   CreateSpaceState copyWith({
-    String? categoryId, String? listingType, List<CategoryModel>? availableCategories,
+    String? categoryId, String? listingType,
     String? title, String? description,
     String? zipCode, String? addressLine, String? city, String? state, String? neighborhood,
     bool? deliveryAvailable, double? deliveryFee, int? deliveryRadiusKm,
@@ -174,7 +172,6 @@ class CreateSpaceState {
     return CreateSpaceState(
       categoryId: categoryId ?? this.categoryId,
       listingType: listingType ?? this.listingType,
-      availableCategories: availableCategories ?? this.availableCategories,
       title: title ?? this.title,
       description: description ?? this.description,
       zipCode: zipCode ?? this.zipCode,
@@ -223,19 +220,7 @@ class CreateSpaceState {
 class CreateSpaceNotifier extends StateNotifier<CreateSpaceState> {
   final Dio _dio;
 
-  CreateSpaceNotifier(this._dio) : super(CreateSpaceState()) {
-    fetchCategories();
-  }
-
-  Future<void> fetchCategories() async {
-    try {
-      final response = await _dio.get('/categories');
-      final categories = (response.data as List).map((c) => CategoryModel.fromJson(c)).toList();
-      state = state.copyWith(availableCategories: categories);
-    } catch (e) {
-      print("Erro ao carregar categorias: $e");
-    }
-  }
+  CreateSpaceNotifier(this._dio) : super(CreateSpaceState());
 
   void updateField({
     String? categoryId, String? listingType,

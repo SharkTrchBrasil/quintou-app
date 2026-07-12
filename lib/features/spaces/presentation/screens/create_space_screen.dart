@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:quintou_app/core/widgets/ds_button.dart';
 import 'package:quintou_app/core/widgets/ds_text_field.dart';
 import 'package:quintou_app/features/spaces/presentation/providers/create_space_provider.dart';
+import 'package:quintou_app/features/explore/data/providers/categories_provider.dart';
 
 class CreateSpaceScreen extends ConsumerStatefulWidget {
   const CreateSpaceScreen({super.key});
@@ -230,60 +231,68 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
   // --- STEPS ---
 
   Widget _buildStep0Category(CreateSpaceState state, CreateSpaceNotifier notifier) {
-    if (state.availableCategories.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    final categoriesAsyncValue = ref.watch(categoriesProvider);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader('O que você quer anunciar?'),
-          Wrap(
-            spacing: 16,
-            runSpacing: 16,
-            children: state.availableCategories.map((cat) {
-              final isSelected = state.categoryId == cat.id;
-              // Mapeando icones string para IconData provisoriamente
-              IconData iconData = Icons.place;
-              if (cat.icon == 'pool') iconData = Icons.pool;
-              if (cat.icon == 'nature_people') iconData = Icons.park;
-              if (cat.icon == 'celebration') iconData = Icons.celebration;
-              if (cat.icon == 'outdoor_grill') iconData = Icons.outdoor_grill;
-              if (cat.icon == 'sports_tennis') iconData = Icons.sports_tennis;
-              if (cat.icon == 'camera_alt') iconData = Icons.camera_alt;
-              if (cat.icon == 'toys') iconData = Icons.toys;
-              if (cat.icon == 'chair') iconData = Icons.chair;
+    return categoriesAsyncValue.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Center(child: Text('Erro ao carregar categorias: $err')),
+      data: (categories) {
+        if (categories.isEmpty) {
+          return const Center(child: Text('Nenhuma categoria disponível.'));
+        }
 
-              return GestureDetector(
-                onTap: () {
-                  notifier.updateField(categoryId: cat.id, listingType: cat.listingType);
-                },
-                child: Container(
-                  width: (MediaQuery.of(context).size.width - 64) / 2,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: isSelected ? _primaryColor.withOpacity(0.05) : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isSelected ? _primaryColor : _borderColor,
-                      width: isSelected ? 2 : _borderWidth,
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader('O que você quer anunciar?'),
+              Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                children: categories.map((cat) {
+                  final isSelected = state.categoryId == cat.id;
+                  // Mapeando icones string para IconData provisoriamente
+                  IconData iconData = Icons.place;
+                  if (cat.icon == 'pool') iconData = Icons.pool;
+                  if (cat.icon == 'nature_people') iconData = Icons.park;
+                  if (cat.icon == 'celebration') iconData = Icons.celebration;
+                  if (cat.icon == 'outdoor_grill') iconData = Icons.outdoor_grill;
+                  if (cat.icon == 'sports_tennis') iconData = Icons.sports_tennis;
+                  if (cat.icon == 'camera_alt') iconData = Icons.camera_alt;
+                  if (cat.icon == 'toys') iconData = Icons.toys;
+                  if (cat.icon == 'chair') iconData = Icons.chair;
+
+                  return GestureDetector(
+                    onTap: () {
+                      notifier.updateField(categoryId: cat.id, listingType: cat.listingType);
+                    },
+                    child: Container(
+                      width: (MediaQuery.of(context).size.width - 64) / 2,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: isSelected ? _primaryColor.withOpacity(0.05) : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isSelected ? _primaryColor : _borderColor,
+                          width: isSelected ? 2 : _borderWidth,
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(iconData, size: 40, color: isSelected ? _primaryColor : Colors.black87),
+                          const SizedBox(height: 12),
+                          Text(cat.name, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? _primaryColor : Colors.black87)),
+                        ],
+                      ),
                     ),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(iconData, size: 40, color: isSelected ? _primaryColor : Colors.black87),
-                      const SizedBox(height: 12),
-                      Text(cat.name, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, color: isSelected ? _primaryColor : Colors.black87)),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
+                  );
+                }).toList(),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
