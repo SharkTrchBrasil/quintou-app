@@ -103,27 +103,34 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header Progress
+            // Header Progress (Swappy style)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
               child: Row(
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back, color: Colors.black),
                     onPressed: _prevPage,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
+                  const SizedBox(width: 16),
                   Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: LinearProgressIndicator(
-                        value: (_currentPage + 1) / _totalPages,
-                        backgroundColor: Colors.grey.shade200,
-                        valueColor: AlwaysStoppedAnimation<Color>(_primaryColor),
-                        minHeight: 6,
-                      ),
+                    child: Row(
+                      children: List.generate(_totalPages, (index) {
+                        return Expanded(
+                          child: Container(
+                            height: 4,
+                            margin: const EdgeInsets.symmetric(horizontal: 2),
+                            decoration: BoxDecoration(
+                              color: index <= _currentPage ? _primaryColor : Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        );
+                      }),
                     ),
                   ),
-                  const SizedBox(width: 48), // balance back button
                 ],
               ),
             ),
@@ -242,7 +249,7 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
         }
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -298,7 +305,7 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
 
   Widget _buildStep1TitleDesc(CreateSpaceState state, CreateSpaceNotifier notifier) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -324,7 +331,7 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
 
   Widget _buildStep2Location(CreateSpaceState state, CreateSpaceNotifier notifier) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -397,7 +404,7 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
 
   Widget _buildStep3Capacity(CreateSpaceState state, CreateSpaceNotifier notifier) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -463,7 +470,7 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
 
   Widget _buildStep4Rules(CreateSpaceState state, CreateSpaceNotifier notifier) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -491,7 +498,7 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
     final availableAmenities = ['Wi-Fi', 'Som', 'TV', 'Ar Condicionado', 'Churrasqueira', 'Forno de Pizza', 'Ducha', 'Cadeiras', 'Guarda-sol', 'Estacionamento'];
     
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -541,7 +548,7 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
 
   Widget _buildStep6Photos(CreateSpaceState state, CreateSpaceNotifier notifier) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -645,7 +652,7 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
     final days = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
     
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -724,7 +731,7 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
 
   Widget _buildStep8Price(CreateSpaceState state, CreateSpaceNotifier notifier) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
