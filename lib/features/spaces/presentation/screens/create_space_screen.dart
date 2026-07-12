@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter/services.dart';
+import 'package:brasil_fields/brasil_fields.dart';
 import 'package:quintou_app/core/widgets/ds_button.dart';
 import 'package:quintou_app/core/widgets/ds_text_field.dart';
 import 'package:quintou_app/features/spaces/presentation/providers/create_space_provider.dart';
@@ -343,10 +345,15 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
                   title: 'CEP',
                   controller: _cepCtrl,
                   keyboardType: TextInputType.number,
+                  formatters: <TextInputFormatter>[
+                    FilteringTextInputFormatter.digitsOnly,
+                    CepInputFormatter(),
+                  ],
                   onChanged: (val) {
-                    notifier.updateField(zipCode: val);
-                    if (val.length >= 8) {
-                      notifier.fetchAddressFromCep(val).then((_) {
+                    final cleanVal = val.replaceAll(RegExp(r'[^0-9]'), '');
+                    notifier.updateField(zipCode: cleanVal);
+                    if (cleanVal.length >= 8) {
+                      notifier.fetchAddressFromCep(cleanVal).then((_) {
                         _addressCtrl.text = ref.read(createSpaceProvider).addressLine;
                         _cityCtrl.text = ref.read(createSpaceProvider).city;
                         _stateCtrl.text = ref.read(createSpaceProvider).state;
