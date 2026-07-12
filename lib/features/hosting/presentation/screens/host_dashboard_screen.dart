@@ -164,7 +164,7 @@ class HostDashboardScreen extends ConsumerWidget {
                                       case 7: text = 'DOM'; break;
                                       default: text = ''; break;
                                     }
-                                    return SideTitleWidget(axisSide: meta.axisSide, child: Text(text, style: style));
+                                    return SideTitleWidget(meta: meta, child: Text(text, style: style));
                                   },
                                 ),
                               ),
