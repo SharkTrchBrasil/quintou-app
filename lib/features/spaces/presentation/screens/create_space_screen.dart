@@ -155,7 +155,7 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
                 border: Border(top: BorderSide(color: Colors.grey.shade200, width: _borderWidth)),
               ),
               child: DsButton(
-                title: _currentPage == _totalPages - 1 ? 'Publicar Anúncio' : 'Continuar',
+                label: _currentPage == _totalPages - 1 ? 'Publicar Anúncio' : 'Continuar',
                 isLoading: state.isLoading,
                 onPressed: _nextPage,
               ),
@@ -314,7 +314,7 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
           DsTextField(
             title: 'Descrição',
             controller: _descCtrl,
-            maxLines: 5,
+
             onChanged: (val) => notifier.updateField(description: val),
           ),
         ],
@@ -361,7 +361,7 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
             children: [
               Expanded(child: DsTextField(title: 'Cidade', controller: _cityCtrl, onChanged: (val) => notifier.updateField(city: val))),
               const SizedBox(width: 16),
-              Expanded(child: DsTextField(title: 'Estado', controller: _stateCtrl, onChanged: (val) => notifier.updateField(state: val))),
+              Expanded(child: DsTextField(title: 'Estado', controller: _stateCtrl, onChanged: (val) => notifier.updateField(stateValue: val))),
             ],
           ),
           
@@ -696,7 +696,7 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
               ),
               const SizedBox(height: 32),
               DsButton(
-                title: 'Salvar Horário',
+                label: 'Salvar Horário',
                 onPressed: () {
                   final newRules = List<AvailabilityRule>.from(currentRules);
                   newRules.removeWhere((r) => r.dayOfWeek == dayOfWeek);
