@@ -155,7 +155,7 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
                 border: Border(top: BorderSide(color: Colors.grey.shade200, width: _borderWidth)),
               ),
               child: DsButton(
-                label: _currentPage == _totalPages - 1 ? 'Publicar Anúncio' : 'Continuar',
+                title: _currentPage == _totalPages - 1 ? 'Publicar Anúncio' : 'Continuar',
                 isLoading: state.isLoading,
                 onPressed: _nextPage,
               ),
@@ -304,7 +304,7 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
         children: [
           _buildHeader('Dê um nome ao seu anúncio', 'Títulos curtos funcionam melhor. Não se preocupe, você pode mudar isso depois.'),
           DsTextField(
-            label: 'Título do anúncio',
+            title: 'Título do anúncio',
             controller: _titleCtrl,
             onChanged: (val) => notifier.updateField(title: val),
           ),
@@ -312,7 +312,7 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
           const Text('Descreva seu espaço', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           DsTextField(
-            label: 'Descrição',
+            title: 'Descrição',
             controller: _descCtrl,
             maxLines: 5,
             onChanged: (val) => notifier.updateField(description: val),
@@ -333,7 +333,7 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
             children: [
               Expanded(
                 child: DsTextField(
-                  label: 'CEP',
+                  title: 'CEP',
                   controller: _cepCtrl,
                   keyboardType: TextInputType.number,
                   onChanged: (val) {
@@ -353,15 +353,15 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          DsTextField(label: 'Rua / Avenida', controller: _addressCtrl, onChanged: (val) => notifier.updateField(addressLine: val)),
+          DsTextField(title: 'Rua / Avenida', controller: _addressCtrl, onChanged: (val) => notifier.updateField(addressLine: val)),
           const SizedBox(height: 16),
-          DsTextField(label: 'Bairro', controller: _neighborhoodCtrl, onChanged: (val) => notifier.updateField(neighborhood: val)),
+          DsTextField(title: 'Bairro', controller: _neighborhoodCtrl, onChanged: (val) => notifier.updateField(neighborhood: val)),
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(child: DsTextField(label: 'Cidade', controller: _cityCtrl, onChanged: (val) => notifier.updateField(city: val))),
+              Expanded(child: DsTextField(title: 'Cidade', controller: _cityCtrl, onChanged: (val) => notifier.updateField(city: val))),
               const SizedBox(width: 16),
-              Expanded(child: DsTextField(label: 'Estado', controller: _stateCtrl, onChanged: (val) => notifier.updateField(state: val))),
+              Expanded(child: DsTextField(title: 'Estado', controller: _stateCtrl, onChanged: (val) => notifier.updateField(state: val))),
             ],
           ),
           
@@ -378,13 +378,13 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
             if (state.deliveryAvailable) ...[
               const SizedBox(height: 16),
               DsTextField(
-                label: 'Taxa de Entrega (R\$)',
+                title: 'Taxa de Entrega (R\$)',
                 keyboardType: TextInputType.number,
                 onChanged: (val) => notifier.updateField(deliveryFee: double.tryParse(val) ?? 0.0),
               ),
               const SizedBox(height: 16),
               DsTextField(
-                label: 'Raio de entrega (Km)',
+                title: 'Raio de entrega (Km)',
                 keyboardType: TextInputType.number,
                 onChanged: (val) => notifier.updateField(deliveryRadiusKm: int.tryParse(val) ?? 10),
               ),
@@ -696,7 +696,7 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
               ),
               const SizedBox(height: 32),
               DsButton(
-                label: 'Salvar Horário',
+                title: 'Salvar Horário',
                 onPressed: () {
                   final newRules = List<AvailabilityRule>.from(currentRules);
                   newRules.removeWhere((r) => r.dayOfWeek == dayOfWeek);
@@ -731,7 +731,7 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
           _buildHeader('Defina seu preço'),
           
           DsTextField(
-            label: 'Valor (R\$)',
+            title: 'Valor (R\$)',
             controller: _priceCtrl,
             keyboardType: TextInputType.number,
             onChanged: (val) => notifier.updateField(price: double.tryParse(val) ?? 50.0),

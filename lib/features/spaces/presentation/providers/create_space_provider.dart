@@ -217,15 +217,18 @@ class CreateSpaceState {
   }
 }
 
-class CreateSpaceNotifier extends StateNotifier<CreateSpaceState> {
-  final Dio _dio;
-
-  CreateSpaceNotifier(this._dio) : super(CreateSpaceState());
+class CreateSpaceNotifier extends Notifier<CreateSpaceState> {
+  @override
+  CreateSpaceState build() {
+    return CreateSpaceState();
+  }
+  
+  Dio get _dio => ref.read(apiClientProvider).dio;
 
   void updateField({
     String? categoryId, String? listingType,
     String? title, String? description,
-    String? zipCode, String? addressLine, String? city, String? state, String? neighborhood,
+    String? zipCode, String? addressLine, String? city, String? stateValue, String? neighborhood,
     bool? deliveryAvailable, double? deliveryFee, int? deliveryRadiusKm,
     int? maxGuests, bool? isOutdoor, String? spaceType, double? sizeLength, double? sizeWidth, String? privacyLevel,
     bool? allowsParties, bool? allowsSmoking, bool? allowsPets, bool? allowsChildren, bool? allowsAlcohol, bool? allowsLoudMusic, bool? allowsCommercial,
@@ -233,10 +236,10 @@ class CreateSpaceNotifier extends StateNotifier<CreateSpaceState> {
     List<AvailabilityRule>? availabilityRules, int? minHours, int? maxHours,
     double? price, String? pricingMode, String? cancellationPolicy, bool? requiresApproval, double? securityDeposit,
   }) {
-    state = state.copyWith(
+    this.state = this.state.copyWith(
       categoryId: categoryId, listingType: listingType,
       title: title, description: description,
-      zipCode: zipCode, addressLine: addressLine, city: city, state: state, neighborhood: neighborhood,
+      zipCode: zipCode, addressLine: addressLine, city: city, state: stateValue, neighborhood: neighborhood,
       deliveryAvailable: deliveryAvailable, deliveryFee: deliveryFee, deliveryRadiusKm: deliveryRadiusKm,
       maxGuests: maxGuests, isOutdoor: isOutdoor, spaceType: spaceType, sizeLength: sizeLength, sizeWidth: sizeWidth, privacyLevel: privacyLevel,
       allowsParties: allowsParties, allowsSmoking: allowsSmoking, allowsPets: allowsPets, allowsChildren: allowsChildren, allowsAlcohol: allowsAlcohol, allowsLoudMusic: allowsLoudMusic, allowsCommercial: allowsCommercial,
@@ -406,6 +409,6 @@ class CreateSpaceNotifier extends StateNotifier<CreateSpaceState> {
   }
 }
 
-final createSpaceProvider = StateNotifierProvider<CreateSpaceNotifier, CreateSpaceState>((ref) {
-  return CreateSpaceNotifier(ref.read(apiClientProvider).dio);
+final createSpaceProvider = NotifierProvider<CreateSpaceNotifier, CreateSpaceState>(() {
+  return CreateSpaceNotifier();
 });
