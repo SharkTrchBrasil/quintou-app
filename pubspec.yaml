@@ -48,6 +48,7 @@ dependencies:
   url_launcher: ^6.3.2
   image_picker: ^1.2.3
   geocoding: ^5.0.0
+  fl_chart: ^1.2.0
 
 dev_dependencies:
   flutter_test:
