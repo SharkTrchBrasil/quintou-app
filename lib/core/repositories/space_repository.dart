@@ -9,6 +9,8 @@ class SpaceRepository {
   Future<List<Space>> getSpaces({
     String? category,
     String? city,
+    String? searchQuery,
+    double? minRating,
     double? minPrice,
     double? maxPrice,
     double? lat,
@@ -38,6 +40,8 @@ class SpaceRepository {
     final queryParams = <String, dynamic>{
       if (category != null) 'category': category,
       if (city != null) 'city': city,
+      if (searchQuery != null) 'search_query': searchQuery,
+      if (minRating != null) 'min_rating': minRating,
       if (minPrice != null) 'min_price': minPrice,
       if (maxPrice != null) 'max_price': maxPrice,
       if (lat != null) 'lat': lat,
@@ -70,6 +74,21 @@ class SpaceRepository {
 
   Future<Space> getSpace(String id) async {
     final response = await _apiClient.dio.get('/spaces/$id');
+    return Space.fromJson(response.data);
+  }
+
+  Future<List<Map<String, dynamic>>> autocompleteSpaces(String query) async {
+    final response = await _apiClient.dio.get('/spaces/autocomplete', queryParameters: {'q': query});
+    return List<Map<String, dynamic>>.from(response.data);
+  }
+
+  Future<List<Space>> getMyListings() async {
+    final response = await _apiClient.dio.get('/spaces/host/me');
+    return (response.data as List).map((json) => Space.fromJson(json)).toList();
+  }
+
+  Future<Space> updateSpace(String id, Map<String, dynamic> data) async {
+    final response = await _apiClient.dio.put('/spaces/$id', data: data);
     return Space.fromJson(response.data);
   }
 }

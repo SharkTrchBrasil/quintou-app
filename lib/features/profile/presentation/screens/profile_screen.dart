@@ -26,7 +26,7 @@ class ProfileScreen extends ConsumerWidget {
               onPressed: () {
                 // Edit profile logic
               },
-              child: const Text('Edit profile', style: TextStyle(color: Color(0xFFB7F65E), fontSize: 16)),
+              child: const Text('Editar perfil', style: TextStyle(color: Color(0xFFB7F65E), fontSize: 16)),
             ),
           const SizedBox(width: 8),
         ],
@@ -52,16 +52,16 @@ class ProfileScreen extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Text(
-                  'Hey, ${user.fullName.split(" ").first}!',
-                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                  'Olá, ${user.fullName.split(" ").first}!',
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
               ),
             ] else ...[
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: const Text(
-                  'Profile',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                  'Perfil',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(height: 16),
@@ -74,83 +74,50 @@ class ProfileScreen extends ConsumerWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () => context.push('/login'),
-                  child: const Text('Log In or Sign Up', style: TextStyle(color: Color(0xFF171E0E), fontSize: 18, fontWeight: FontWeight.bold)),
+                  child: const Text('Entrar ou Cadastrar', style: TextStyle(color: Color(0xFF171E0E), fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
-            
             const SizedBox(height: 24),
             
-            // Promo Banner
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFB7F65E), Color(0xFF90D91E)],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.pool, color: Color(0xFFB7F65E)),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('Get the 2026 Summer pass!', style: TextStyle(color: Color(0xFF171E0E), fontWeight: FontWeight.bold, fontSize: 16)),
-                          SizedBox(height: 4),
-                          Text('Enjoy \$0 in service fees, earn free bookings, and get priority support.', style: TextStyle(color: Color(0xFF171E0E), fontSize: 12)),
-                        ],
-                      ),
-                    ),
-                    const Icon(Icons.chevron_right, color: Color(0xFF171E0E)),
-                  ],
-                ),
-              ),
+            const Padding(
+              padding: EdgeInsets.all(24.0),
+              child: Text('Configurações da Conta', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             ),
             
-            const SizedBox(height: 16),
-            const Divider(thickness: 1, color: Color(0xFFEEEEEE)),
-            
-            // Refer a friend
-            ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-              title: const Text('Gift \$10, Earn \$10!', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-              subtitle: const Text('Earn up to \$1,000 in credits sharing Quintou!', style: TextStyle(fontSize: 14, color: Colors.grey)),
-              trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-              onTap: () {},
+            _buildMenuItem('Perfil'),
+            _buildMenuItem('Conta'),
+            _buildMenuItem('Métodos de pagamento'),
+            _buildMenuItem('Notificações', badgeText: 'REVISAR'),
+            _buildMenuItem('Verificação de hóspede'),
+            _buildMenuItem(
+              'Favoritos', 
+              onTap: () {
+                // Navega para a aba de favoritos (índice 3)
+                ref.read(guestTabIndexProvider.notifier).setIndex(3);
+                // Retorna para a tela principal (fecha o perfil, caso o perfil não seja parte do shell principal, 
+                // mas na verdade o perfil é a aba índice 4, então só de mudar o índice o shell atualiza).
+              }
             ),
             
             const Divider(thickness: 8, color: Color(0xFFF5F5F5)),
             
             const Padding(
               padding: EdgeInsets.all(24.0),
-              child: Text('Account Settings', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              child: Text('Legal', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             ),
             
-            _buildMenuItem('Profile'),
-            _buildMenuItem('Account'),
-            _buildMenuItem('Payment methods'),
-            _buildMenuItem('Notifications', badgeText: 'REVIEW'),
-            _buildMenuItem('Guest verification'),
-            _buildMenuItem('Favorites'),
+            _buildMenuItem('Termos de Uso', onTap: () => context.push('/legal', extra: 0)),
+            _buildMenuItem('Política de Privacidade', onTap: () => context.push('/legal', extra: 1)),
+            _buildMenuItem('Termos do Proprietário', onTap: () => context.push('/legal', extra: 2)),
+            _buildMenuItem('Termos do Hóspede', onTap: () => context.push('/legal', extra: 3)),
+            _buildMenuItem('Política de Cancelamento', onTap: () => context.push('/legal', extra: 4)),
             
             if (user != null && user.isHost) ...[
               const Divider(thickness: 8, color: Color(0xFFF5F5F5)),
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-                title: const Text('Switch to Hosting', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                title: const Text('Mudar para Proprietário', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 trailing: Switch(
                   value: ref.watch(isHostModeProvider),
                   activeColor: const Color(0xFFB7F65E),
@@ -183,7 +150,7 @@ class ProfileScreen extends ConsumerWidget {
               const Divider(thickness: 8, color: Color(0xFFF5F5F5)),
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-                title: const Text('Log out', style: TextStyle(fontSize: 16, color: Colors.red)),
+                title: const Text('Sair', style: TextStyle(fontSize: 16, color: Colors.red)),
                 onTap: () {
                   ref.read(authProvider.notifier).logout();
                 },

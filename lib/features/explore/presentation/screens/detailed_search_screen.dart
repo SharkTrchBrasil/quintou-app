@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:quintou_app/features/explore/presentation/providers/search_autocomplete_provider.dart';
+import 'package:quintou_app/features/spaces/presentation/providers/spaces_provider.dart';
 
 class DetailedSearchScreen extends ConsumerStatefulWidget {
   const DetailedSearchScreen({super.key});
@@ -30,8 +32,13 @@ class _DetailedSearchScreenState extends ConsumerState<DetailedSearchScreen> {
     super.dispose();
   }
 
-  void _submitSearch() {
-    // TODO: Implementar lógica de salvar no provider e disparar busca
+  void _submitSearch(String query) {
+    if (query.isNotEmpty) {
+      ref.read(spaceFilterProvider.notifier).setSearchQuery(query);
+    }
+    // Opcional: setar a categoria também se foi escolhida.
+    // ref.read(spaceFilterProvider.notifier).setCategory(_selectedCategory != 'Tudo no Quintou' ? _selectedCategory : null);
+    
     context.pop();
   }
 
@@ -52,7 +59,7 @@ class _DetailedSearchScreenState extends ConsumerState<DetailedSearchScreen> {
           child: TextField(
             controller: _searchController,
             focusNode: _focusNode,
-            onSubmitted: (_) => _submitSearch(),
+            onSubmitted: (value) => _submitSearch(value),
             decoration: InputDecoration(
               hintText: 'O que você está buscando?',
               hintStyle: const TextStyle(color: Colors.grey),
@@ -75,8 +82,9 @@ class _DetailedSearchScreenState extends ConsumerState<DetailedSearchScreen> {
               filled: true,
               fillColor: Colors.grey[200],
             ),
-            onChanged: (_) {
+            onChanged: (value) {
               setState(() {});
+              ref.read(searchAutocompleteProvider.notifier).search(value);
             },
           ),
         ),
@@ -110,34 +118,61 @@ class _DetailedSearchScreenState extends ConsumerState<DetailedSearchScreen> {
       body: _searchController.text.isEmpty
           ? const Center(
               child: Text(
-                'Digite algo para buscar',
+                'Digite o nome ou cidade',
                 style: TextStyle(color: Colors.grey, fontSize: 16),
               ),
             )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    'Você está buscando por',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.grey[800],
-                    ),
-                  ),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.search, color: Colors.black54),
-                  title: Text(
-                    _searchController.text,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  subtitle: Text('Em \$_selectedCategory', style: const TextStyle(fontSize: 13)),
-                  onTap: _submitSearch,
-                ),
-              ],
+          : Consumer(
+              builder: (context, ref, child) {
+                final searchState = ref.watch(searchAutocompleteProvider);
+
+                return searchState.when(
+                  data: (results) {
+                    if (results.isEmpty) {
+                      return ListTile(
+                        leading: const Icon(Icons.search, color: Colors.black54),
+                        title: Text(
+                          'Buscar por "${_searchController.text}"',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        onTap: () => _submitSearch(_searchController.text),
+                      );
+                    }
+
+                    return ListView.builder(
+                      itemCount: results.length + 1, // +1 para o item "Buscar por X" no início
+                      itemBuilder: (context, index) {
+                        if (index == 0) {
+                          return ListTile(
+                            leading: const Icon(Icons.search, color: Colors.black54),
+                            title: Text(
+                              'Buscar por "${_searchController.text}"',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            onTap: () => _submitSearch(_searchController.text),
+                          );
+                        }
+
+                        final item = results[index - 1];
+                        final title = item['title'] as String? ?? '';
+                        final city = item['city'] as String? ?? '';
+                        
+                        return ListTile(
+                          leading: const Icon(Icons.location_on_outlined, color: Colors.black54),
+                          title: Text(
+                            title,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                          subtitle: Text(city, style: const TextStyle(fontSize: 13)),
+                          onTap: () => _submitSearch(title),
+                        );
+                      },
+                    );
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (error, stack) => Center(child: Text('Erro: $error')),
+                );
+              },
             ),
     );
   }

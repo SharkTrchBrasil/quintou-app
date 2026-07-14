@@ -405,6 +405,11 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
                 keyboardType: TextInputType.number,
                 onChanged: (val) => notifier.updateField(deliveryRadiusKm: int.tryParse(val) ?? 10),
               ),
+              const SizedBox(height: 16),
+              DsTextField(
+                title: 'Descrição da Entrega',
+                onChanged: (val) => notifier.updateField(deliveryDescription: val),
+              ),
             ]
           ]
         ],
@@ -450,6 +455,26 @@ class _CreateSpaceScreenState extends ConsumerState<CreateSpaceScreen> {
           ),
 
           if (state.listingType == 'SPACE') ...[
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: DsTextField(
+                    title: 'Comprimento (m)',
+                    keyboardType: TextInputType.number,
+                    onChanged: (val) => notifier.updateField(sizeLength: double.tryParse(val) ?? 0.0),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: DsTextField(
+                    title: 'Largura (m)',
+                    keyboardType: TextInputType.number,
+                    onChanged: (val) => notifier.updateField(sizeWidth: double.tryParse(val) ?? 0.0),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 24),
             SwitchListTile(
               title: const Text('Espaço ao ar livre (Outdoor)', style: TextStyle(fontWeight: FontWeight.bold)),

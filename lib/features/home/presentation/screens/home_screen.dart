@@ -5,9 +5,10 @@ import 'package:geocoding/geocoding.dart';
 import 'package:go_router/go_router.dart';
 import 'package:quintou_app/features/explore/data/providers/categories_provider.dart';
 import 'package:quintou_app/features/spaces/presentation/providers/spaces_provider.dart';
-import 'package:quintou_app/features/spaces/presentation/widgets/space_card.dart';
+import 'package:quintou_app/features/spaces/presentation/widgets/space_grid_card.dart';
 import 'package:quintou_app/core/shell/app_shell.dart';
 import 'package:quintou_app/features/explore/presentation/screens/search_screen.dart';
+import 'package:quintou_app/core/models/space_model.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -224,19 +225,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SizedBox(height: 16),
             const Divider(height: 1, color: Color(0xFFEEEEEE)),
 
-            // Título do Feed
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Text(
-                'Espaços populares perto de você',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-            ),
-
             // Feed Real (Backend)
             Expanded(
               child: spacesAsyncValue.when(
@@ -244,27 +232,70 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   if (spaces.isEmpty) {
                     return const Center(child: Text('Nenhum espaço encontrado.', style: TextStyle(color: Colors.grey)));
                   }
+
+                  // Agrupar espaços por categoria
+                  final Map<String, List<Space>> spacesByCategory = {};
+                  for (var space in spaces) {
+                    final cat = (space.category.isEmpty) ? 'Destaques' : space.category;
+                    if (!spacesByCategory.containsKey(cat)) {
+                      spacesByCategory[cat] = [];
+                    }
+                    spacesByCategory[cat]!.add(space);
+                  }
+
                   return RefreshIndicator(
+                    color: const Color(0xFFB7F65E),
                     onRefresh: () => ref.refresh(spacesProvider.future),
                     child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      itemCount: spaces.length,
+                      padding: const EdgeInsets.only(top: 16.0, bottom: 24.0),
+                      itemCount: spacesByCategory.keys.length,
                       itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 24.0),
-                          child: SpaceCard(
-                            space: spaces[index],
-                            onTap: () {
-                              context.push('/space-details', extra: spaces[index]);
-                            },
-                          ),
+                        final category = spacesByCategory.keys.elementAt(index);
+                        final catSpaces = spacesByCategory[category]!;
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                              child: Text(
+                                category,
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              height: 330,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                itemCount: catSpaces.length,
+                                itemBuilder: (context, cardIndex) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(right: 16.0),
+                                    child: SpaceGridCard(
+                                      space: catSpaces[cardIndex],
+                                      width: 160,
+                                      onTap: () {
+                                        context.push('/space-details', extra: catSpaces[cardIndex]);
+                                      },
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
                         );
                       },
                     ),
                   );
                 },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, stack) => Center(child: Text('Erro ao carregar os espaços: \$err')),
+                loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFFB7F65E))),
+                error: (err, stack) => Center(child: Text('Erro ao carregar os espaços: $err')),
               ),
             ),
           ],

@@ -2,6 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:quintou_app/core/models/user_model.dart';
 import 'package:quintou_app/core/providers/providers.dart';
+import 'package:quintou_app/core/shell/app_shell.dart';
+import 'package:quintou_app/core/services/secure_storage_service.dart';
+import 'package:quintou_app/features/chat/data/services/push_notification_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:quintou_app/features/chat/presentation/providers/chat_provider.dart';
 
 class AuthState {
   final User? user;
@@ -28,9 +34,8 @@ class AuthNotifier extends Notifier<AuthState> {
 
   Future<void> _loadUser() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('access_token');
-      if (token == null) {
+      final hasTokens = await SecureStorageService.hasTokens();
+      if (!hasTokens) {
         state = state.copyWith(isLoading: false);
         return;
       }
@@ -39,11 +44,17 @@ class AuthNotifier extends Notifier<AuthState> {
       final repo = ref.read(authRepositoryProvider);
       final user = await repo.getMe();
       state = state.copyWith(isLoading: false, user: user);
+      
+      // Restore host mode preference
+      final prefs = await SharedPreferences.getInstance();
+      final savedHostMode = prefs.getBool('is_host_mode') ?? user.isHost;
+      ref.read(isHostModeProvider.notifier).setMode(savedHostMode);
+      
+      // Upload FCM token when app starts and user is already logged in
+      PushNotificationService.uploadFcmToken();
     } catch (e) {
       // Token expirado ou inválido — limpar e seguir como deslogado
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('access_token');
-      await prefs.remove('refresh_token');
+      await _performCompleteLogout();
       state = state.copyWith(isLoading: false);
     }
   }
@@ -55,14 +66,22 @@ class AuthNotifier extends Notifier<AuthState> {
       
       final tokenInfo = await repo.login(email, password);
       
-      // Salvar o token
+      // Salvar tokens de forma segura
+      await SecureStorageService.saveTokens(
+        accessToken: tokenInfo.accessToken,
+        refreshToken: tokenInfo.refreshToken,
+      );
+      
+      // Save host mode preference
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('access_token', tokenInfo.accessToken);
-      if (tokenInfo.refreshToken.isNotEmpty) {
-         await prefs.setString('refresh_token', tokenInfo.refreshToken);
-      }
+      await prefs.setBool('is_host_mode', tokenInfo.user.isHost);
+      ref.read(isHostModeProvider.notifier).setMode(tokenInfo.user.isHost);
       
       state = state.copyWith(isLoading: false, user: tokenInfo.user);
+      
+      // Upload FCM token after manual login
+      PushNotificationService.uploadFcmToken();
+      
       return true;
     } catch (e) {
       state = state.copyWith(isLoading: false, error: 'Credenciais inválidas ou erro no servidor.');
@@ -71,10 +90,38 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('access_token');
-    await prefs.remove('refresh_token');
+    await _performCompleteLogout();
     state = AuthState();
+  }
+
+  Future<void> _performCompleteLogout() async {
+    // 1. Clear secure tokens
+    await SecureStorageService.clearAll();
+    
+    // 2. Clear SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    
+    // 3. Reset all app state
+    ref.read(isHostModeProvider.notifier).setMode(false);
+    ref.read(guestTabIndexProvider.notifier).setIndex(0);
+    
+    // 4. Invalidate all data providers to clear cached data
+    ref.invalidate(conversationsProvider);
+    ref.invalidate(unreadCountProvider);
+    // Add other providers that cache user-specific data as they are identified
+    
+    // 5. Clear image cache
+    try {
+      await DefaultCacheManager().emptyCache();
+    } catch (e) {
+      print('Failed to clear image cache: $e');
+    }
+    
+    // 6. Close any active WebSocket connections
+    // This will be handled by the chat providers when they detect logout
+    
+    print('Complete logout performed');
   }
 
   Future<bool> register({

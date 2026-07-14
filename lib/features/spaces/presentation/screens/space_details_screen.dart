@@ -5,7 +5,12 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:quintou_app/core/models/space_model.dart';
+import 'package:quintou_app/features/spaces/presentation/widgets/space_grid_card.dart';
+import 'package:quintou_app/features/chat/presentation/screens/chat_screen.dart';
+import 'package:quintou_app/features/favorites/presentation/providers/favorites_provider.dart';
 import 'package:quintou_app/features/auth/presentation/providers/auth_provider.dart';
+import 'package:quintou_app/features/chat/presentation/providers/chat_provider.dart';
+import 'package:bot_toast/bot_toast.dart';
 import 'package:quintou_app/core/providers/providers.dart';
 
 const Color themeColor = Color(0xFF00AEEF); // Quintou blue instead of Swappy purple
@@ -244,7 +249,29 @@ class _SpaceDetailsScreenState extends ConsumerState<SpaceDetailsScreen> {
       details.add({
         'icon': Icons.directions_car,
         'label': 'Estacionamento',
-        'value': 'Disponível',
+        'value': space.parkingCapacity != null && space.parkingCapacity! > 0 ? '${space.parkingCapacity} vagas' : 'Disponível',
+      });
+    }
+    
+    details.add({
+      'icon': space.isOutdoor ? Icons.park_outlined : Icons.home_outlined,
+      'label': 'Ambiente',
+      'value': space.isOutdoor ? 'Ao ar livre' : 'Interno',
+    });
+
+    if (space.isAdaFriendly) {
+      details.add({
+        'icon': Icons.accessible_forward,
+        'label': 'Acessibilidade',
+        'value': 'Acessível',
+      });
+    }
+
+    if (space.hasHeatedPool) {
+      details.add({
+        'icon': Icons.hot_tub,
+        'label': 'Piscina',
+        'value': 'Aquecida',
       });
     }
 
@@ -316,6 +343,9 @@ class _SpaceDetailsScreenState extends ConsumerState<SpaceDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final ad = widget.space;
+    final favState = ref.watch(favoritesProvider);
+    final authState = ref.watch(authProvider);
+    final isFavorited = favState.isFavorited(ad.id);
     final currentUser = ref.watch(authProvider).user;
     final isOwner = currentUser?.id == ad.hostId;
 
@@ -343,8 +373,18 @@ class _SpaceDetailsScreenState extends ConsumerState<SpaceDetailsScreen> {
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              icon: const Icon(Icons.favorite_border, color: Colors.black87),
-              onPressed: () {},
+              icon: Icon(
+                isFavorited ? Icons.favorite : Icons.favorite_border, 
+                color: isFavorited ? Colors.red : Colors.black87
+              ),
+              onPressed: () {
+                if (authState.user == null) {
+                  BotToast.showText(text: 'Faça login para favoritar');
+                  context.push('/login');
+                  return;
+                }
+                ref.read(favoritesProvider.notifier).toggleFavorite(ad.id, space: ad);
+              },
             ),
           ),
           Container(
@@ -446,6 +486,34 @@ class _SpaceDetailsScreenState extends ConsumerState<SpaceDetailsScreen> {
                       height: 1.2,
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(Icons.star, size: 18, color: Colors.amber),
+                      const SizedBox(width: 4),
+                      Text(
+                        ad.averageRating > 0 ? ad.averageRating.toStringAsFixed(1) : 'Novo',
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                      ),
+                      if (ad.totalReviews > 0) ...[
+                        Text(
+                          ' (${ad.totalReviews} avaliações)',
+                          style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+                        ),
+                      ],
+                      if (ad.isFeatured) ...[
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text('Destaque', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.amber)),
+                        ),
+                      ],
+                    ],
+                  ),
                   const SizedBox(height: 20),
                   
                   Row(
@@ -508,6 +576,22 @@ class _SpaceDetailsScreenState extends ConsumerState<SpaceDetailsScreen> {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
+                      if (ad.instantBook)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.flash_on, size: 14, color: Colors.blue),
+                              SizedBox(width: 4),
+                              Text('Reserva Instantânea', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blue)),
+                            ],
+                          ),
+                        ),
                       if (ad.cancellationPolicy != 'STRICT')
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -788,164 +872,304 @@ class _SpaceDetailsScreenState extends ConsumerState<SpaceDetailsScreen> {
                   ],
 
                   const SizedBox(height: 40),
-                  // MAP
-                  Container(
-                    height: 200,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Stack(
-                      children: [
-                        Center(
-                          child: Icon(Icons.map, size: 48, color: Colors.grey[400]),
-                        ),
-                        Center(
-                          child: Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Container(
-                                width: 20,
-                                height: 20,
-                                decoration: BoxDecoration(
-                                  color: Colors.blue,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 2),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                  const Text(
+                    'Localização',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                      letterSpacing: -0.5,
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Text(
-                    '${ad.city}, ${ad.state}',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Localização exata fornecida após a reserva.',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: themeColor.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.location_city, color: themeColor, size: 28),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${ad.city}, ${ad.state}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Localização exata fornecida após a reserva.',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 40),
 
-                  // DETAILED HOST PROFILE
+                  const Text(
+                    'Sobre o proprietário',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey.shade200),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[300]!),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            ad.hostAvatar.isNotEmpty
-                                ? CachedNetworkImage(
-                                    imageUrl: ad.hostAvatar,
-                                    imageBuilder: (context, imageProvider) => CircleAvatar(
-                                      radius: 24,
-                                      backgroundImage: imageProvider,
+                            Stack(
+                              alignment: Alignment.bottomCenter,
+                              children: [
+                                Container(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  padding: const EdgeInsets.all(3),
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: LinearGradient(
+                                      colors: [themeColor, Colors.blue],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
                                     ),
-                                    placeholder: (context, url) => CircleAvatar(
-                                      radius: 24,
-                                      backgroundColor: Colors.grey[200],
-                                    ),
-                                    errorWidget: (context, url, error) => CircleAvatar(
-                                      radius: 24,
-                                      backgroundColor: Colors.grey[200],
-                                      child: Icon(Icons.person, color: Colors.grey[500], size: 28),
-                                    ),
-                                  )
-                                : CircleAvatar(
-                                    backgroundColor: Colors.grey[200],
-                                    radius: 24,
-                                    child: Icon(Icons.person, color: Colors.grey[500], size: 28),
                                   ),
+                                  child: ad.hostAvatar.isNotEmpty
+                                      ? CachedNetworkImage(
+                                          imageUrl: ad.hostAvatar,
+                                          imageBuilder: (context, imageProvider) => CircleAvatar(
+                                            radius: 32,
+                                            backgroundImage: imageProvider,
+                                          ),
+                                          placeholder: (context, url) => CircleAvatar(
+                                            radius: 32,
+                                            backgroundColor: Colors.grey[200],
+                                          ),
+                                          errorWidget: (context, url, error) => CircleAvatar(
+                                            radius: 32,
+                                            backgroundColor: Colors.grey[200],
+                                            child: Icon(Icons.person, color: Colors.grey[400], size: 40),
+                                          ),
+                                        )
+                                      : CircleAvatar(
+                                          backgroundColor: Colors.grey[200],
+                                          radius: 32,
+                                          child: Icon(Icons.person, color: Colors.grey[400], size: 40),
+                                        ),
+                                ),
+                              ],
+                            ),
                             const SizedBox(width: 16),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        ad.hostName.isNotEmpty ? ad.hostName : 'Anfitrião',
-                                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                      ),
-                                      if (ad.isVerifiedHost) ...[
+                                  if (ad.isVerifiedHost)
+                                    Row(
+                                      children: [
+                                        Text(
+                                          'CONTA VERIFICADA',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
                                         const SizedBox(width: 4),
-                                        const Icon(Icons.verified, color: Colors.blue, size: 16),
+                                        const Icon(Icons.verified, color: Colors.blue, size: 14),
                                       ],
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
+                                    ),
+                                  if (ad.isVerifiedHost) const SizedBox(height: 2),
                                   Text(
-                                    'Membro desde 2022',
-                                    style: TextStyle(color: Colors.grey.shade600),
+                                    ad.hostName.isNotEmpty ? ad.hostName : 'Proprietário',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Último acesso recentemente',
+                                    style: TextStyle(
+                                      color: Colors.grey[600], 
+                                      fontSize: 13,
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Adoramos nosso espaço e compartilhar com os convidados. Entre em contato se tiver alguma dúvida!',
-                          style: TextStyle(fontSize: 15, color: Colors.grey[800], height: 1.4),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            const Icon(Icons.calendar_today_outlined, size: 18, color: Colors.black54),
+                            const SizedBox(width: 12),
+                            Text(
+                              'No Quintou desde 2022',
+                              style: TextStyle(color: Colors.grey[800], fontSize: 14),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 16),
-                        RichText(
-                          text: TextSpan(
-                            text: 'Tempo de resposta: ',
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.grey[800]),
-                            children: [
-                              TextSpan(
-                                text: 'Em até 1 hora',
-                                style: TextStyle(fontWeight: FontWeight.normal, color: Colors.grey[700]),
-                              ),
-                            ],
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(Icons.location_on_outlined, size: 18, color: Colors.black54),
+                            const SizedBox(width: 12),
+                            Text(
+                              '${ad.city}, ${ad.state}',
+                              style: TextStyle(color: Colors.grey[800], fontSize: 14),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          'Informações verificadas',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                            letterSpacing: -0.5,
                           ),
                         ),
-                        const SizedBox(height: 20),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton(
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              side: BorderSide(color: Colors.grey.shade400),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            const Icon(Icons.check, color: Colors.green, size: 20),
+                            const SizedBox(width: 8),
+                            Text('Identidade', style: TextStyle(color: Colors.grey[800], fontSize: 15)),
+                            const SizedBox(width: 24),
+                            const Icon(Icons.check, color: Colors.green, size: 20),
+                            const SizedBox(width: 8),
+                            Text('Telefone', style: TextStyle(color: Colors.grey[800], fontSize: 15)),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(Icons.check, color: Colors.green, size: 20),
+                            const SizedBox(width: 8),
+                            Text('E-mail', style: TextStyle(color: Colors.grey[800], fontSize: 15)),
+                          ],
+                        ),
+                        if (!isOwner) ...[
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: themeColor,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              onPressed: () async {
+                                print('DEBUG: Botão de chat clicado');
+                                if (currentUser == null) {
+                                  print('DEBUG: currentUser is null, abrindo /login');
+                                  context.push('/login');
+                                  return;
+                                }
+                                
+                                try {
+                                  print('DEBUG: Iniciando startConversationBySpace com spaceId: ${ad.id}');
+                                  final repo = ref.read(featureChatRepositoryProvider);
+                                  final conv = await repo.startConversationBySpace(ad.id);
+                                  
+                                  print('DEBUG: startConversationBySpace retornou sucesso: ${conv.id}');
+                                  if (context.mounted) {
+                                    print('DEBUG: context.mounted true, push /chat/${conv.id}');
+                                    context.push('/chat/${conv.id}', extra: conv);
+                                  }
+                                } catch (e, stackTrace) {
+                                  print('DEBUG: Erro em startConversationBySpace: $e');
+                                  print('DEBUG: StackTrace: $stackTrace');
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Erro ao iniciar chat: $e')),
+                                    );
+                                  }
+                                }
+                              },
+                                child: const Text(
+                                  'Falar com o proprietário',
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                               ),
                             ),
-                            onPressed: () {},
-                            child: const Text(
-                              'Acessar perfil do anfitrião',
-                              style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
-                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
+
+                  const SizedBox(height: 40),
+                  
+                  const Text(
+                    'Condições de Reserva',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  _buildFeatureRow(
+                    Icons.access_time,
+                    'Duração da reserva',
+                    'Mínimo de ${ad.minHours} ${ad.minHours == 1 ? "hora" : "horas"}. Máximo de ${ad.maxHours} ${ad.maxHours == 1 ? "hora" : "horas"}.',
+                  ),
+                  const SizedBox(height: 20),
+                  _buildFeatureRow(
+                    ad.requiresApproval ? Icons.hourglass_empty : Icons.flash_on,
+                    ad.requiresApproval ? 'Requer aprovação' : 'Reserva instantânea',
+                    ad.requiresApproval 
+                        ? 'O anfitrião tem até 24h para aprovar seu pedido.'
+                        : 'Você confirma a reserva imediatamente, sem esperar aprovação.',
+                  ),
+                  if (ad.securityDeposit > 0) ...[
+                    const SizedBox(height: 20),
+                    _buildFeatureRow(
+                      Icons.security,
+                      'Depósito de segurança',
+                      'Uma retenção de ${_formatPrice(ad.securityDeposit)} será feita no seu cartão e devolvida após o evento se não houver danos.',
+                    ),
+                  ],
 
                   const SizedBox(height: 40),
 
                   const Text(
                     'Regras do Espaço',
                     style: TextStyle(
-                      fontSize: 22,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
                       letterSpacing: -0.5,
@@ -1010,6 +1234,35 @@ class _SpaceDetailsScreenState extends ConsumerState<SpaceDetailsScreen> {
                       );
                     },
                   ),
+
+                  if (ad.allowsPets && ad.petRules != null && ad.petRules!.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey[200]!),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.pets, size: 20, color: Colors.grey[600]),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Regras para pets', style: TextStyle(fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 4),
+                                Text(ad.petRules!, style: TextStyle(fontSize: 14, color: Colors.grey[700])),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
 
                   if (ad.rules != null && ad.rules!.isNotEmpty) ...[
                     const SizedBox(height: 24),

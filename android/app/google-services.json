@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "32317255567",
+    "project_id": "quintou-a4266",
+    "storage_bucket": "quintou-a4266.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:32317255567:android:7d579991a37eb8f008a5fa",
+        "android_client_info": {
+          "package_name": "br.com.quintou"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD7S-x1dZcgDEFjX9Rfbk5QfbwYnR2d6uE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

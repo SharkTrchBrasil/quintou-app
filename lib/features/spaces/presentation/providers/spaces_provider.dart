@@ -5,6 +5,8 @@ import 'package:quintou_app/core/services/location_service.dart';
 
 class SpaceFilterState {
   final String? category;
+  final String? searchQuery;
+  final double? minRating;
   final double? minPrice;
   final double? maxPrice;
   final int? minGuests;
@@ -38,6 +40,8 @@ class SpaceFilterState {
 
   SpaceFilterState({
     this.category,
+    this.searchQuery,
+    this.minRating,
     this.minPrice,
     this.maxPrice,
     this.minGuests,
@@ -61,7 +65,7 @@ class SpaceFilterState {
   });
 
   SpaceFilterState copyWith({
-    String? category, double? minPrice, double? maxPrice, int? minGuests,
+    String? category, String? searchQuery, double? minRating, double? minPrice, double? maxPrice, int? minGuests,
     bool? requiresApproval, bool? isOutdoor, String? spaceType, String? privacyLevel,
     bool? allowsSmoking, bool? allowsAlcohol, bool? allowsLoudMusic, bool? allowsParties, bool? allowsPets, bool? allowsCommercial,
     bool? hasRestroom, bool? hasParking, bool? isAdaFriendly, bool? hasHeatedPool, bool? hasHotTub,
@@ -69,6 +73,8 @@ class SpaceFilterState {
   }) {
     return SpaceFilterState(
       category: category ?? this.category,
+      searchQuery: searchQuery ?? this.searchQuery,
+      minRating: minRating ?? this.minRating,
       minPrice: minPrice ?? this.minPrice,
       maxPrice: maxPrice ?? this.maxPrice,
       minGuests: minGuests ?? this.minGuests,
@@ -104,9 +110,13 @@ class SpaceFilterNotifier extends Notifier<SpaceFilterState> {
   void setCategory(String? cat) {
     state = state.copyWith(category: cat);
   }
+
+  void setSearchQuery(String? query) {
+    state = state.copyWith(searchQuery: query);
+  }
   
   void clearFilters() {
-    state = SpaceFilterState(category: state.category); // Keep category
+    state = SpaceFilterState(category: state.category, searchQuery: state.searchQuery); // Keep category and search query
   }
 }
 
@@ -126,6 +136,8 @@ final spacesProvider = FutureProvider<List<Space>>((ref) async {
     lng: position?.longitude,
     radius: position != null ? 50.0 : null,
     category: filters.category,
+    searchQuery: filters.searchQuery,
+    minRating: filters.minRating,
     minPrice: filters.minPrice,
     maxPrice: filters.maxPrice,
     minGuests: filters.minGuests,

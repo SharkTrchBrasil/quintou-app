@@ -34,6 +34,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _cpfLookedUp = false;
   String? _cpfError;
   bool _isHost = false;
+  bool _acceptedTerms = false;
 
   @override
   void dispose() {
@@ -81,11 +82,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (!mounted) return;
       
       final data = response.data;
-      if (data['is_valid'] == true) {
+      if (data['is_valid'] == true && data['real_name'] != null && (data['real_name'] as String).trim().isNotEmpty) {
         setState(() {
           _cpfLookedUp = true;
           _cpfError = null;
-          _nameController.text = data['real_name'] ?? 'Usuário Visitante';
+          _nameController.text = (data['real_name'] as String).trim();
         });
         
         Future.delayed(const Duration(milliseconds: 500), () {
@@ -93,7 +94,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         });
       } else {
         setState(() {
-          _cpfError = data['error_message'] ?? 'CPF inválido';
+          _cpfError = data['error_message'] ?? 'Não foi possível validar este CPF';
           _cpfLookedUp = false;
         });
       }
@@ -361,12 +362,53 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 24),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: Checkbox(
+                              value: _acceptedTerms,
+                              activeColor: const Color(0xFFB7F65E),
+                              checkColor: const Color(0xFF171E0E),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                              onChanged: (val) => setState(() => _acceptedTerms = val ?? false),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => context.push('/legal', extra: 0),
+                              child: RichText(
+                                text: TextSpan(
+                                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600, height: 1.4),
+                                  children: const [
+                                    TextSpan(text: 'Li e aceito os '),
+                                    TextSpan(
+                                      text: 'Termos de Uso',
+                                      style: TextStyle(color: Color(0xFF4CAF50), fontWeight: FontWeight.w600, decoration: TextDecoration.underline),
+                                    ),
+                                    TextSpan(text: ', a '),
+                                    TextSpan(
+                                      text: 'Política de Privacidade',
+                                      style: TextStyle(color: Color(0xFF4CAF50), fontWeight: FontWeight.w600, decoration: TextDecoration.underline),
+                                    ),
+                                    TextSpan(text: ' e assumo os riscos inerentes ao uso dos espaços.'),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
                       DsButton(
                         label: 'Criar Conta',
-                        onPressed: authState.isLoading || _isLoading ? null : _handleRegister,
+                        onPressed: authState.isLoading || _isLoading || !_acceptedTerms ? null : _handleRegister,
                         isLoading: authState.isLoading || _isLoading,
-                        isDisabled: authState.isLoading || _isLoading,
+                        isDisabled: authState.isLoading || _isLoading || !_acceptedTerms,
                       ),
                     ],
                   ],

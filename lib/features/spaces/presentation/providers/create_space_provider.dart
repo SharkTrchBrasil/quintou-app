@@ -58,6 +58,7 @@ class CreateSpaceState {
   final bool deliveryAvailable;
   final double deliveryFee;
   final int deliveryRadiusKm;
+  final String deliveryDescription;
 
   // Step 3: Capacidade
   final int maxGuests;
@@ -118,6 +119,7 @@ class CreateSpaceState {
     this.deliveryAvailable = false,
     this.deliveryFee = 0.0,
     this.deliveryRadiusKm = 10,
+    this.deliveryDescription = '',
     
     this.maxGuests = 10,
     this.isOutdoor = true,
@@ -162,7 +164,7 @@ class CreateSpaceState {
     String? categoryId, String? listingType,
     String? title, String? description,
     String? zipCode, String? addressLine, String? city, String? state, String? neighborhood, String? referencePoint,
-    bool? deliveryAvailable, double? deliveryFee, int? deliveryRadiusKm,
+    bool? deliveryAvailable, double? deliveryFee, int? deliveryRadiusKm, String? deliveryDescription,
     int? maxGuests, bool? isOutdoor, String? spaceType, double? sizeLength, double? sizeWidth, String? privacyLevel,
     bool? allowsParties, bool? allowsSmoking, bool? allowsPets, bool? allowsChildren, bool? allowsAlcohol, bool? allowsLoudMusic, bool? allowsCommercial,
     List<String>? amenities, List<String>? tags, bool? hasRestroom, bool? hasParking, bool? isAdaFriendly, bool? hasHeatedPool, bool? hasHotTub,
@@ -185,6 +187,7 @@ class CreateSpaceState {
       deliveryAvailable: deliveryAvailable ?? this.deliveryAvailable,
       deliveryFee: deliveryFee ?? this.deliveryFee,
       deliveryRadiusKm: deliveryRadiusKm ?? this.deliveryRadiusKm,
+      deliveryDescription: deliveryDescription ?? this.deliveryDescription,
       maxGuests: maxGuests ?? this.maxGuests,
       isOutdoor: isOutdoor ?? this.isOutdoor,
       spaceType: spaceType ?? this.spaceType,
@@ -232,7 +235,7 @@ class CreateSpaceNotifier extends Notifier<CreateSpaceState> {
     String? categoryId, String? listingType,
     String? title, String? description,
     String? zipCode, String? addressLine, String? city, String? stateValue, String? neighborhood, String? referencePoint,
-    bool? deliveryAvailable, double? deliveryFee, int? deliveryRadiusKm,
+    bool? deliveryAvailable, double? deliveryFee, int? deliveryRadiusKm, String? deliveryDescription,
     int? maxGuests, bool? isOutdoor, String? spaceType, double? sizeLength, double? sizeWidth, String? privacyLevel,
     bool? allowsParties, bool? allowsSmoking, bool? allowsPets, bool? allowsChildren, bool? allowsAlcohol, bool? allowsLoudMusic, bool? allowsCommercial,
     List<String>? amenities, List<String>? tags, bool? hasRestroom, bool? hasParking, bool? isAdaFriendly, bool? hasHeatedPool, bool? hasHotTub,
@@ -243,7 +246,7 @@ class CreateSpaceNotifier extends Notifier<CreateSpaceState> {
       categoryId: categoryId, listingType: listingType,
       title: title, description: description,
       zipCode: zipCode, addressLine: addressLine, city: city, state: stateValue, neighborhood: neighborhood, referencePoint: referencePoint,
-      deliveryAvailable: deliveryAvailable, deliveryFee: deliveryFee, deliveryRadiusKm: deliveryRadiusKm,
+      deliveryAvailable: deliveryAvailable, deliveryFee: deliveryFee, deliveryRadiusKm: deliveryRadiusKm, deliveryDescription: deliveryDescription,
       maxGuests: maxGuests, isOutdoor: isOutdoor, spaceType: spaceType, sizeLength: sizeLength, sizeWidth: sizeWidth, privacyLevel: privacyLevel,
       allowsParties: allowsParties, allowsSmoking: allowsSmoking, allowsPets: allowsPets, allowsChildren: allowsChildren, allowsAlcohol: allowsAlcohol, allowsLoudMusic: allowsLoudMusic, allowsCommercial: allowsCommercial,
       amenities: amenities, tags: tags, hasRestroom: hasRestroom, hasParking: hasParking, isAdaFriendly: isAdaFriendly, hasHeatedPool: hasHeatedPool, hasHotTub: hasHotTub,
@@ -326,6 +329,7 @@ class CreateSpaceNotifier extends Notifier<CreateSpaceState> {
         "delivery_available": state.deliveryAvailable,
         "delivery_fee": state.deliveryFee,
         "delivery_radius_km": state.deliveryRadiusKm,
+        "delivery_description": state.deliveryDescription,
         
         "pricing_mode": state.pricingMode,
         "price": state.price,

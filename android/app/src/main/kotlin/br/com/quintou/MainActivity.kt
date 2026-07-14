@@ -1,4 +1,4 @@
-package br.com.quintou.quintou_app
+package br.com.quintou
 
 import io.flutter.embedding.android.FlutterActivity
 

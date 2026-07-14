@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quintou_app/core/models/space_model.dart';
+import 'package:quintou_app/features/favorites/presentation/providers/favorites_provider.dart';
+import 'package:quintou_app/features/auth/presentation/providers/auth_provider.dart';
+import 'package:bot_toast/bot_toast.dart';
+import 'package:go_router/go_router.dart';
 
-class SpaceCard extends StatelessWidget {
+class SpaceCard extends ConsumerWidget {
   final Space space;
   final VoidCallback onTap;
 
   const SpaceCard({super.key, required this.space, required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final favState = ref.watch(favoritesProvider);
+    final authState = ref.watch(authProvider);
+    final isFavorited = favState.isFavorited(space.id);
     // Pegar a imagem primária ou a primeira disponível
     final primaryImage = space.images.isNotEmpty 
         ? (space.images.firstWhere((img) => img.isPrimary, orElse: () => space.images.first).url)
@@ -40,9 +48,18 @@ class SpaceCard extends StatelessWidget {
                   top: 12,
                   right: 12,
                   child: IconButton(
-                    icon: const Icon(Icons.favorite_border, color: Colors.white, size: 28),
+                    icon: Icon(
+                      isFavorited ? Icons.favorite : Icons.favorite_border, 
+                      color: isFavorited ? Colors.red : Colors.white, 
+                      size: 28
+                    ),
                     onPressed: () {
-                      // TODO: Implementar lógica de favoritar
+                      if (authState.user == null) {
+                        BotToast.showText(text: 'Faça login para favoritar');
+                        context.push('/login');
+                        return;
+                      }
+                      ref.read(favoritesProvider.notifier).toggleFavorite(space.id, space: space);
                     },
                   ),
                 ),

@@ -6,12 +6,32 @@ import 'package:quintou_app/features/profile/presentation/screens/profile_screen
 import 'package:quintou_app/features/hosting/presentation/screens/host_dashboard_screen.dart';
 import 'package:quintou_app/features/explore/presentation/screens/explore_screen.dart';
 import 'package:quintou_app/features/explore/presentation/screens/search_screen.dart';
+import 'package:quintou_app/features/chat/presentation/screens/conversations_screen.dart';
+import 'package:quintou_app/features/chat/presentation/providers/chat_provider.dart';
+import 'package:quintou_app/features/favorites/presentation/screens/favorites_screen.dart';
+import 'package:quintou_app/features/bookings/presentation/screens/guest_bookings_screen.dart';
+import 'package:quintou_app/features/hosting/presentation/screens/host_bookings_screen.dart';
+import 'package:quintou_app/features/hosting/presentation/screens/host_listings_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class IsHostModeNotifier extends Notifier<bool> {
   @override
   bool build() => false;
-  void toggle() => state = !state;
-  void setMode(bool mode) => state = mode;
+
+  void toggle() {
+    state = !state;
+    _persist(state);
+  }
+
+  void setMode(bool mode) {
+    state = mode;
+    _persist(mode);
+  }
+
+  Future<void> _persist(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('is_host_mode', value);
+  }
 }
 
 final isHostModeProvider = NotifierProvider<IsHostModeNotifier, bool>(() {
@@ -28,6 +48,16 @@ final guestTabIndexProvider = NotifierProvider<GuestTabIndexNotifier, int>(() {
   return GuestTabIndexNotifier();
 });
 
+class HostTabIndexNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+  void setIndex(int index) => state = index;
+}
+
+final hostTabIndexProvider = NotifierProvider<HostTabIndexNotifier, int>(() {
+  return HostTabIndexNotifier();
+});
+
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
@@ -36,23 +66,22 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
-  int _hostTabIndex = 0;
-
   // Telas do modo HÓSPEDE
   final List<Widget> _guestScreens = const [
     HomeScreen(),
     SearchScreen(),
-    _PlaceholderScreen(title: 'Chat', icon: Icons.chat_bubble_outline),
-    _PlaceholderScreen(title: 'Favoritos', icon: Icons.favorite),
+    GuestBookingsScreen(),
+    ConversationsScreen(),
+    FavoritesScreen(),
     ProfileScreen(),
   ];
 
   // Telas do modo ANFITRIÃO
   final List<Widget> _hostScreens = const [
     HostDashboardScreen(),
-    _PlaceholderScreen(title: 'Bookings', icon: Icons.calendar_today),
-    _PlaceholderScreen(title: 'Listings', icon: Icons.home_work),
-    _PlaceholderScreen(title: 'Inbox', icon: Icons.inbox),
+    HostBookingsScreen(),
+    HostListingsScreen(),
+    ConversationsScreen(),
     ProfileScreen(),
   ];
 
@@ -67,7 +96,8 @@ class _AppShellState extends ConsumerState<AppShell> {
     final effectiveHostMode = isHostMode && canBeHost;
 
     final guestTabIndex = ref.watch(guestTabIndexProvider);
-    final currentIndex = effectiveHostMode ? _hostTabIndex : guestTabIndex;
+    final hostTabIndex = ref.watch(hostTabIndexProvider);
+    final currentIndex = effectiveHostMode ? hostTabIndex : guestTabIndex;
     final screens = effectiveHostMode ? _hostScreens : _guestScreens;
 
     return Scaffold(
@@ -88,19 +118,34 @@ class _AppShellState extends ConsumerState<AppShell> {
   }
 
   Widget _buildGuestNavBar(int currentIndex) {
+    // Watch unread count
+    final unreadAsync = ref.watch(unreadCountProvider);
+    final unreadCount = unreadAsync.value ?? 0;
+    
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
       currentIndex: currentIndex,
       onTap: (index) => ref.read(guestTabIndexProvider.notifier).setIndex(index),
-      items: const [
-        BottomNavigationBarItem(
+      items: [
+        const BottomNavigationBarItem(
           icon: Icon(Icons.wb_sunny_outlined),
           label: 'Home',
         ),
-        BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Explorar'),
-        BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: 'Chats'),
-        BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: 'Favoritos'),
-        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Perfil'),
+        const BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Explorar'),
+        const BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Reservas'),
+        BottomNavigationBarItem(
+          icon: unreadCount > 0
+              ? Badge(
+                  label: Text(unreadCount > 99 ? '99+' : '$unreadCount'),
+                  backgroundColor: const Color(0xFFB7F65E),
+                  textColor: Colors.black,
+                  child: const Icon(Icons.chat_bubble_outline),
+                )
+              : const Icon(Icons.chat_bubble_outline),
+          label: 'Chats',
+        ),
+        const BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: 'Favoritos'),
+        const BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Perfil'),
       ],
     );
   }
@@ -109,7 +154,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
       currentIndex: currentIndex,
-      onTap: (index) => setState(() => _hostTabIndex = index),
+      onTap: (index) => ref.read(hostTabIndexProvider.notifier).setIndex(index),
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Hosting'),
         BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Bookings'),

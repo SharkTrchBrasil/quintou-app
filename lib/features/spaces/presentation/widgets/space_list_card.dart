@@ -1,24 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quintou_app/core/models/space_model.dart';
+import 'package:quintou_app/features/favorites/presentation/providers/favorites_provider.dart';
+import 'package:quintou_app/features/auth/presentation/providers/auth_provider.dart';
+import 'package:bot_toast/bot_toast.dart';
+import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
-class SpaceListCard extends StatelessWidget {
+class SpaceListCard extends ConsumerWidget {
   final Space space;
   final VoidCallback onTap;
-  final VoidCallback? onChatPressed;
 
   const SpaceListCard({
     super.key,
     required this.space,
     required this.onTap,
-    this.onChatPressed,
   });
 
   String _formatPrice(double price) {
-    return 'R\$ ${price.toStringAsFixed(2).replaceAll('.', ',')}';
+    String suffix = '/hora';
+    if (space.pricingType != null) {
+      final type = space.pricingType.toString().toLowerCase();
+      if (type.contains('day') || type.contains('dia') || type == 'daily') {
+        suffix = '/dia';
+      }
+    }
+    return 'R\$ ${price.toStringAsFixed(2).replaceAll('.', ',')}$suffix';
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final favState = ref.watch(favoritesProvider);
+    final authState = ref.watch(authProvider);
+    final isFavorited = favState.isFavorited(space.id);
     final primaryImage = space.images.isNotEmpty 
         ? (space.images.firstWhere((img) => img.isPrimary, orElse: () => space.images.first).url)
         : null;
@@ -51,26 +65,40 @@ class SpaceListCard extends StatelessWidget {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: primaryImage != null
-                          ? Image.network(
-                              primaryImage,
+                          ? CachedNetworkImage(
+                              imageUrl: primaryImage,
                               width: 140,
                               height: 140,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, color: Colors.grey),
+                              errorWidget: (context, url, error) => const Icon(Icons.broken_image, color: Colors.grey),
                             )
                           : const Center(child: Icon(Icons.image_not_supported, color: Colors.grey)),
                       ),
                       Positioned(
                         top: 4,
                         right: 4,
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white,
-                          ),
-                          child: const Padding(
-                            padding: EdgeInsets.all(4.0),
-                            child: Icon(Icons.favorite_border, size: 20, color: Colors.black87),
+                        child: GestureDetector(
+                          onTap: () {
+                            if (authState.user == null) {
+                              BotToast.showText(text: 'Faça login para favoritar');
+                              context.push('/login');
+                              return;
+                            }
+                            ref.read(favoritesProvider.notifier).toggleFavorite(space.id, space: space);
+                          },
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(4.0),
+                              child: Icon(
+                                isFavorited ? Icons.favorite : Icons.favorite_border, 
+                                size: 20, 
+                                color: isFavorited ? Colors.red : Colors.black87
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -106,6 +134,47 @@ class SpaceListCard extends StatelessWidget {
                             color: Colors.grey[600],
                           ),
                         ),
+                        const SizedBox(height: 6),
+                        
+                        // Badges
+                        Wrap(
+                          spacing: 4,
+                          runSpacing: 4,
+                          children: [
+                            if (space.instantBook)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.bolt, size: 12, color: Colors.amber[900]),
+                                    const SizedBox(width: 2),
+                                    Text('Reserva instantânea', style: TextStyle(fontSize: 10, color: Colors.amber[900], fontWeight: FontWeight.w600)),
+                                  ],
+                                ),
+                              ),
+                            if (space.cancellationPolicy.toLowerCase().contains('flex'))
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.event_available, size: 12, color: Colors.green),
+                                    const SizedBox(width: 2),
+                                    Text('Cancelamento flexível', style: TextStyle(fontSize: 10, color: Colors.green[900], fontWeight: FontWeight.w600)),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
                         
                         const Spacer(),
                         
@@ -136,27 +205,6 @@ class SpaceListCard extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 16),
-            
-            // Chat Button
-            SizedBox(
-              width: double.infinity,
-              height: 40,
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.chat_bubble_outline, size: 18, color: Colors.black87),
-                label: const Text(
-                  'Chat',
-                  style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: Colors.grey[400]!),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                onPressed: onChatPressed ?? () {},
-              ),
             ),
           ],
         ),

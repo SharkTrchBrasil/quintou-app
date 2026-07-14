@@ -6,10 +6,13 @@ import 'package:go_router/go_router.dart';
 
 import 'package:quintou_app/features/explore/data/providers/categories_provider.dart';
 import 'package:quintou_app/features/spaces/presentation/providers/spaces_provider.dart';
+import 'package:quintou_app/features/spaces/data/repositories/space_repository.dart';
+import 'package:quintou_app/features/spaces/data/models/space_model.dart';
 import 'package:quintou_app/features/spaces/presentation/widgets/space_list_card.dart';
 import 'package:quintou_app/features/spaces/presentation/widgets/space_grid_card.dart';
 import 'package:quintou_app/features/explore/presentation/widgets/filters_bottom_sheet.dart';
 import 'package:quintou_app/core/shell/app_shell.dart';
+import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
 class IsGridModeNotifier extends Notifier<bool> {
   @override
@@ -43,16 +46,56 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   String _currentLocation = 'Buscando...';
   bool _isLoadingLocation = true;
   final ScrollController _scrollController = ScrollController();
+  final PagingController<int, Space> _pagingController = PagingController(firstPageKey: 0);
+  static const int _pageSize = 20;
 
   @override
   void initState() {
     super.initState();
     _determinePosition();
+    _pagingController.addPageRequestListener((pageKey) {
+      _fetchPage(pageKey);
+    });
+  }
+
+  Future<void> _fetchPage(int pageKey) async {
+    try {
+      final repository = ref.read(featureSpaceRepositoryProvider);
+      final spaceFilter = ref.read(spaceFilterProvider);
+      final sortOption = ref.read(sortOptionProvider);
+      final category = ref.read(searchCategoryProvider);
+
+      final spaces = await repository.getSpaces(
+        limit: _pageSize,
+        offset: pageKey,
+        searchQuery: spaceFilter.searchQuery,
+        minPrice: spaceFilter.minPrice,
+        maxPrice: spaceFilter.maxPrice,
+        minCapacity: spaceFilter.minCapacity,
+        hasPool: spaceFilter.hasPool,
+        hasBbq: spaceFilter.hasBbq,
+        hasWifi: spaceFilter.hasWifi,
+        hasAc: spaceFilter.hasAc,
+        sortBy: sortOption,
+        category: category,
+      );
+
+      final isLastPage = spaces.length < _pageSize;
+      if (isLastPage) {
+        _pagingController.appendLastPage(spaces);
+      } else {
+        final nextPageKey = pageKey + spaces.length;
+        _pagingController.appendPage(spaces, nextPageKey);
+      }
+    } catch (error) {
+      _pagingController.error = error;
+    }
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _pagingController.dispose();
     super.dispose();
   }
 
@@ -213,8 +256,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final spacesAsyncValue = ref.watch(spacesProvider);
     final isGridMode = ref.watch(isGridModeProvider);
+    final spaceFilter = ref.watch(spaceFilterProvider);
+    
+    ref.listen<SpaceFilterState>(spaceFilterProvider, (previous, next) {
+      _pagingController.refresh();
+    });
+    ref.listen<String>(sortOptionProvider, (previous, next) {
+      _pagingController.refresh();
+    });
+    ref.listen<String>(searchCategoryProvider, (previous, next) {
+      _pagingController.refresh();
+    });
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -288,15 +341,25 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'O que você está buscando?',
+                          spaceFilter.searchQuery?.isNotEmpty == true 
+                            ? spaceFilter.searchQuery! 
+                            : 'O que você está buscando?',
                           style: TextStyle(
-                            color: Colors.grey[600],
+                            color: spaceFilter.searchQuery?.isNotEmpty == true ? Colors.black87 : Colors.grey[600],
                             fontSize: 15,
+                            fontWeight: spaceFilter.searchQuery?.isNotEmpty == true ? FontWeight.w600 : FontWeight.normal,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      if (spaceFilter.searchQuery?.isNotEmpty == true)
+                        GestureDetector(
+                          onTap: () {
+                            ref.read(spaceFilterProvider.notifier).setSearchQuery(null);
+                          },
+                          child: Icon(Icons.close, color: Colors.grey[600], size: 20),
+                        ),
                     ],
                   ),
                 ),
@@ -391,50 +454,39 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
             // Feed Real (Backend)
             Expanded(
-              child: spacesAsyncValue.when(
-                data: (spaces) {
-                  if (spaces.isEmpty) {
-                    return const Center(child: Text('Nenhum anúncio encontrado.', style: TextStyle(color: Colors.grey)));
-                  }
-                  
-                  return RefreshIndicator(
-                    onRefresh: () => ref.refresh(spacesProvider.future),
-                    child: isGridMode 
-                    ? GridView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.all(16.0),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 16,
-                          crossAxisSpacing: 16,
-                          childAspectRatio: 0.75, // Ajuste para caber as imagens
-                        ),
-                        itemCount: spaces.length,
-                        itemBuilder: (context, index) {
-                          return SpaceGridCard(
-                            space: spaces[index],
-                            onTap: () => context.push('/space-details', extra: spaces[index]),
-                          );
-                        },
-                      )
-                    : ListView.builder(
-                        controller: _scrollController,
-                        padding: EdgeInsets.zero,
-                        itemCount: spaces.length,
-                        itemBuilder: (context, index) {
-                          return SpaceListCard(
-                            space: spaces[index],
-                            onTap: () => context.push('/space-details', extra: spaces[index]),
-                            onChatPressed: () {
-                              // TODO: Navegar para tela de chat
-                            },
-                          );
-                        },
+              child: RefreshIndicator(
+                onRefresh: () => Future.sync(() => _pagingController.refresh()),
+                child: isGridMode 
+                ? PagedGridView<int, Space>(
+                    pagingController: _pagingController,
+                    padding: const EdgeInsets.all(16.0),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: 0.65,
+                    ),
+                    builderDelegate: PagedChildBuilderDelegate<Space>(
+                      itemBuilder: (context, item, index) => SpaceGridCard(
+                        space: item,
+                        onTap: () => context.push('/space-details', extra: item),
                       ),
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, stack) => Center(child: Text('Erro ao carregar os espaços: $err')),
+                      firstPageErrorIndicatorBuilder: (_) => const Center(child: Text('Erro ao carregar')),
+                      noItemsFoundIndicatorBuilder: (_) => const Center(child: Text('Nenhum anúncio encontrado.', style: TextStyle(color: Colors.grey))),
+                    ),
+                  )
+                : PagedListView<int, Space>(
+                    pagingController: _pagingController,
+                    padding: EdgeInsets.zero,
+                    builderDelegate: PagedChildBuilderDelegate<Space>(
+                      itemBuilder: (context, item, index) => SpaceListCard(
+                        space: item,
+                        onTap: () => context.push('/space-details', extra: item),
+                      ),
+                      firstPageErrorIndicatorBuilder: (_) => const Center(child: Text('Erro ao carregar')),
+                      noItemsFoundIndicatorBuilder: (_) => const Center(child: Text('Nenhum anúncio encontrado.', style: TextStyle(color: Colors.grey))),
+                    ),
+                  ),
               ),
             ),
           ],
