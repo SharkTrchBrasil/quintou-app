@@ -1,5 +1,8 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:quintou_app/core/api/api_client.dart';
 import 'package:quintou_app/features/chat/data/models/conversation_model.dart';
 import 'package:quintou_app/features/chat/data/models/message_model.dart';
@@ -11,13 +14,11 @@ final featureChatRepositoryProvider = Provider<ChatRepository>((ref) {
   return ChatRepository(apiClient);
 });
 
-import 'dart:convert';
-import 'package:hive_flutter/hive_flutter.dart';
-
-class ConversationsNotifier extends AutoDisposeAsyncNotifier<List<Conversation>> {
+class ConversationsNotifier extends AsyncNotifier<List<Conversation>> {
   int _offset = 0;
   bool _hasMore = true;
   static const int _limit = 20;
+  StreamSubscription? _wsSub;
 
   @override
   Future<List<Conversation>> build() async {
@@ -38,7 +39,55 @@ class ConversationsNotifier extends AutoDisposeAsyncNotifier<List<Conversation>>
     final conversations = await repository.getConversations(limit: _limit, offset: _offset);
     _hasMore = conversations.length >= _limit;
     await box.put('all_conversations', jsonEncode(conversations.map((e) => e.toJson()).toList()));
+    
+    // 3. Connect to global WebSocket to receive real-time updates
+    final wsService = WebSocketService();
+    wsService.connect();
+    
+    // Listen to new messages to update the inbox
+    _wsSub?.cancel();
+    _wsSub = wsService.messageStream.listen((message) {
+      _handleNewMessage(message);
+    });
+    
+    ref.onDispose(() {
+      _wsSub?.cancel();
+    });
+    
     return conversations;
+  }
+  
+  void _handleNewMessage(ChatMessage message) {
+    if (state.value == null) return;
+    
+    final currentList = List<Conversation>.from(state.value!);
+    final index = currentList.indexWhere((c) => c.id == message.conversationId);
+    
+    if (index != -1) {
+      // Update existing conversation — reconstruct with updated fields
+      final conv = currentList[index];
+      final updatedConv = Conversation(
+        id: conv.id,
+        bookingId: conv.bookingId,
+        spaceId: conv.spaceId,
+        hostId: conv.hostId,
+        guestId: conv.guestId,
+        createdAt: conv.createdAt,
+        spaceTitle: conv.spaceTitle,
+        spaceImage: conv.spaceImage,
+        otherUser: conv.otherUser,
+        lastMessage: message.content,
+        lastMessageAt: message.createdAt,
+        unreadCount: conv.unreadCount + 1,
+      );
+      
+      currentList.removeAt(index);
+      currentList.insert(0, updatedConv);
+      state = AsyncValue.data(currentList);
+    } else {
+      // New conversation — invalidate to fetch from server
+      ref.invalidateSelf();
+    }
   }
 
   Future<void> loadMore() async {
@@ -55,7 +104,7 @@ class ConversationsNotifier extends AutoDisposeAsyncNotifier<List<Conversation>>
   }
 }
 
-final conversationsProvider = AsyncNotifierProvider.autoDispose<ConversationsNotifier, List<Conversation>>(() {
+final conversationsProvider = AsyncNotifierProvider<ConversationsNotifier, List<Conversation>>(() {
   return ConversationsNotifier();
 });
 
@@ -75,6 +124,10 @@ class MessagesController extends ChangeNotifier {
   bool hasMore = true;
   String? error;
   List<ChatMessage> messages = [];
+  String? typingUserId;
+  Timer? _typingTimer;
+  StreamSubscription? _msgSub;
+  StreamSubscription? _typingSub;
   
   static const int _pageSize = 50;
   int _currentOffset = 0;
@@ -90,16 +143,31 @@ class MessagesController extends ChangeNotifier {
       isLoading = false;
       notifyListeners();
 
-      _wsService = WebSocketService(conversationId: conversationId);
-      _wsService.connect();
+      _wsService = WebSocketService();
+      _wsService.connect(); // Connects if not already connected (singleton)
       
-      _wsService.messageStream.listen((newMessage) {
-        if (_disposed) return;
+      _msgSub = _wsService.messageStream.listen((newMessage) {
+        if (_disposed || newMessage.conversationId != conversationId) return;
+        
         // Check if message already exists (to avoid duplicates from WebSocket + HTTP)
         if (!messages.any((m) => m.id == newMessage.id)) {
           messages = [newMessage, ...messages];
           notifyListeners();
         }
+      });
+      
+      _typingSub = _wsService.typingStream.listen((event) {
+        if (_disposed || event['conversation_id'] != conversationId) return;
+        typingUserId = event['user_id'];
+        notifyListeners();
+        
+        _typingTimer?.cancel();
+        _typingTimer = Timer(const Duration(seconds: 3), () {
+          if (!_disposed) {
+            typingUserId = null;
+            notifyListeners();
+          }
+        });
       });
     } catch (e, st) {
       if (_disposed) return;
@@ -154,6 +222,10 @@ class MessagesController extends ChangeNotifier {
 
   Future<void> sendMessage(String content) async {
     try {
+      // Send via WS to trigger push notifications and real-time broadcast
+      _wsService.sendMessage(conversationId, content);
+      
+      // Also send via HTTP for persistence guarantee
       final msg = await repository.sendMessage(conversationId, content);
       if (_disposed) return;
       if (!messages.any((m) => m.id == msg.id)) {
@@ -162,26 +234,19 @@ class MessagesController extends ChangeNotifier {
       }
     } catch (e) {
       print('Error sending message: $e');
-      // Handle error - could show toast to user
     }
   }
 
   void sendTypingIndicator() {
-    _wsService.sendTypingIndicator();
+    _wsService.sendTypingIndicator(conversationId);
   }
 
   @override
   void dispose() {
     _disposed = true;
-    _wsService.dispose();
+    _typingTimer?.cancel();
+    _msgSub?.cancel();
+    _typingSub?.cancel();
     super.dispose();
   }
 }
-
-// Provides the typing stream for a specific conversation
-final typingStreamProvider = StreamProvider.autoDispose.family<String, String>((ref, conversationId) {
-  final wsService = WebSocketService(conversationId: conversationId);
-  wsService.connect();
-  ref.onDispose(() => wsService.dispose());
-  return wsService.typingStream;
-});

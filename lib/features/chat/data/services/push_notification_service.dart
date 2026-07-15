@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:quintou_app/core/api/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:quintou_app/core/routing/router.dart';
 
 class PushNotificationService {
   static final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
@@ -39,7 +40,8 @@ class PushNotificationService {
     await _localNotificationsPlugin.initialize(
       settings: initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
-        // Handle notification tap
+        // Fallback for local notification tap without payload parsing yet
+        goRouter.push('/notifications');
       },
     );
 
@@ -65,6 +67,7 @@ class PushNotificationService {
           id: notification.hashCode,
           title: notification.title,
           body: notification.body,
+          payload: message.data.toString(), // Optional: serialize data if needed
           notificationDetails: NotificationDetails(
             android: AndroidNotificationDetails(
               channel.id,
@@ -80,7 +83,7 @@ class PushNotificationService {
           ),
         );
 
-        // 2. Mostra o Toast bonito do app por cima
+        // Mostra o Toast bonito do app por cima
         BotToast.showCustomNotification(
           duration: const Duration(seconds: 5),
           toastBuilder: (cancelFunc) {
@@ -92,6 +95,7 @@ class PushNotificationService {
                   child: GestureDetector(
                     onTap: () {
                       cancelFunc();
+                      _handleNotificationTap(message.data);
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -153,13 +157,39 @@ class PushNotificationService {
 
     // 4. Handle background and terminated state taps
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      // Handle navigation when app is opened via notification
+      _handleNotificationTap(message.data);
+    });
+
+    // Handle cold start (app was terminated and opened via notification)
+    final initialMessage = await _firebaseMessaging.getInitialMessage();
+    if (initialMessage != null) {
+      // Delay slightly to ensure router is ready
+      Future.delayed(const Duration(milliseconds: 500), () {
+        _handleNotificationTap(initialMessage.data);
+      });
+    }
+
+    // 5. Listen to token refresh
+    _firebaseMessaging.onTokenRefresh.listen((newToken) {
+      uploadFcmToken(forceToken: newToken);
     });
   }
 
-  static Future<void> uploadFcmToken() async {
+  static void _handleNotificationTap(Map<String, dynamic> data) {
+    if (data.isEmpty) {
+      goRouter.push('/notifications');
+      return;
+    }
+
+    // Default route based on notification content
+    // Because /chat/:id needs a Conversation object, we navigate to the notifications 
+    // center and let the user tap from there where we can load things properly.
+    goRouter.push('/notifications');
+  }
+
+  static Future<void> uploadFcmToken({String? forceToken}) async {
     try {
-      final token = await _firebaseMessaging.getToken();
+      final token = forceToken ?? await _firebaseMessaging.getToken();
       if (token != null) {
         final prefs = await SharedPreferences.getInstance();
         final accessToken = prefs.getString('access_token');

@@ -13,6 +13,7 @@ import 'package:quintou_app/features/bookings/presentation/screens/guest_booking
 import 'package:quintou_app/features/hosting/presentation/screens/host_bookings_screen.dart';
 import 'package:quintou_app/features/hosting/presentation/screens/host_listings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:quintou_app/core/providers/notification_provider.dart';
 
 class IsHostModeNotifier extends Notifier<bool> {
   @override
@@ -151,16 +152,29 @@ class _AppShellState extends ConsumerState<AppShell> {
   }
 
   Widget _buildHostNavBar(int currentIndex) {
+    final unreadAsync = ref.watch(unreadNotificationsCountProvider);
+    final unreadCount = unreadAsync.value ?? 0;
+
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
       currentIndex: currentIndex,
       onTap: (index) => ref.read(hostTabIndexProvider.notifier).setIndex(index),
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Hosting'),
-        BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Bookings'),
-        BottomNavigationBarItem(icon: Icon(Icons.home_work), label: 'Listings'),
-        BottomNavigationBarItem(icon: Icon(Icons.inbox), label: 'Inbox'),
-        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+      items: [
+        const BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Hosting'),
+        const BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Bookings'),
+        const BottomNavigationBarItem(icon: Icon(Icons.home_work), label: 'Listings'),
+        BottomNavigationBarItem(
+          icon: unreadCount > 0
+              ? Badge(
+                  label: Text(unreadCount > 99 ? '99+' : '$unreadCount'),
+                  backgroundColor: const Color(0xFFB7F65E),
+                  textColor: Colors.black,
+                  child: const Icon(Icons.inbox),
+                )
+              : const Icon(Icons.inbox),
+          label: 'Inbox',
+        ),
+        const BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
       ],
     );
   }

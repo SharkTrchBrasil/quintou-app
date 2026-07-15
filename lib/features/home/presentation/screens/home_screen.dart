@@ -9,6 +9,7 @@ import 'package:quintou_app/features/spaces/presentation/widgets/space_grid_card
 import 'package:quintou_app/core/shell/app_shell.dart';
 import 'package:quintou_app/features/explore/presentation/screens/search_screen.dart';
 import 'package:quintou_app/core/models/space_model.dart';
+import 'package:quintou_app/core/providers/notification_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -164,9 +165,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.notifications_none, color: Colors.black87),
-                    onPressed: () {},
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final unreadAsync = ref.watch(unreadNotificationsCountProvider);
+                      final unreadCount = unreadAsync.value ?? 0;
+                      
+                      return IconButton(
+                        icon: unreadCount > 0
+                            ? Badge(
+                                label: Text(unreadCount > 99 ? '99+' : '$unreadCount'),
+                                backgroundColor: const Color(0xFFB7F65E),
+                                textColor: Colors.black,
+                                child: const Icon(Icons.notifications_none, color: Colors.black87),
+                              )
+                            : const Icon(Icons.notifications_none, color: Colors.black87),
+                        onPressed: () {
+                          context.push('/notifications');
+                        },
+                      );
+                    },
                   ),
                 ],
               ),

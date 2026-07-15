@@ -3,11 +3,16 @@ import 'package:quintou_app/core/providers/providers.dart';
 import 'package:quintou_app/core/repositories/space_repository.dart';
 import 'dart:async';
 
-class SearchAutocompleteNotifier extends StateNotifier<AsyncValue<List<Map<String, dynamic>>>> {
-  final SpaceRepository _repository;
+class SearchAutocompleteNotifier extends Notifier<AsyncValue<List<Map<String, dynamic>>>> {
   Timer? _debounce;
 
-  SearchAutocompleteNotifier(this._repository) : super(const AsyncValue.data([]));
+  @override
+  AsyncValue<List<Map<String, dynamic>>> build() {
+    ref.onDispose(() {
+      _debounce?.cancel();
+    });
+    return const AsyncValue.data([]);
+  }
 
   void search(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
@@ -21,26 +26,16 @@ class SearchAutocompleteNotifier extends StateNotifier<AsyncValue<List<Map<Strin
     
     _debounce = Timer(const Duration(milliseconds: 300), () async {
       try {
-        final results = await _repository.autocompleteSpaces(query);
-        if (mounted) {
-          state = AsyncValue.data(results);
-        }
+        final repository = ref.read(spaceRepositoryProvider);
+        final results = await repository.autocompleteSpaces(query);
+        state = AsyncValue.data(results);
       } catch (e, st) {
-        if (mounted) {
-          state = AsyncValue.error(e, st);
-        }
+        state = AsyncValue.error(e, st);
       }
     });
   }
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    super.dispose();
-  }
 }
 
-final searchAutocompleteProvider = StateNotifierProvider<SearchAutocompleteNotifier, AsyncValue<List<Map<String, dynamic>>>>((ref) {
-  final repository = ref.watch(spaceRepositoryProvider);
-  return SearchAutocompleteNotifier(repository);
+final searchAutocompleteProvider = NotifierProvider<SearchAutocompleteNotifier, AsyncValue<List<Map<String, dynamic>>>>(() {
+  return SearchAutocompleteNotifier();
 });

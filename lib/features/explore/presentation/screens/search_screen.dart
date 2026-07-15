@@ -467,7 +467,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       childAspectRatio: 0.65,
                     ),
                     builderDelegate: PagedChildBuilderDelegate<Space>(
-                      itemBuilder: (context, item, index) => SpaceGridCard(
+                      itemBuilder: (BuildContext context, Space item, int index) => SpaceGridCard(
                         space: item,
                         onTap: () => context.push('/space-details', extra: item),
                       ),
@@ -479,7 +479,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     pagingController: _pagingController,
                     padding: EdgeInsets.zero,
                     builderDelegate: PagedChildBuilderDelegate<Space>(
-                      itemBuilder: (context, item, index) => SpaceListCard(
+                      itemBuilder: (BuildContext context, Space item, int index) => SpaceListCard(
                         space: item,
                         onTap: () => context.push('/space-details', extra: item),
                       ),

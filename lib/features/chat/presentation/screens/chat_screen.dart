@@ -91,8 +91,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final authState = ref.watch(authProvider);
     final currentUserId = authState.user?.id;
     
-    final typingAsync = ref.watch(typingStreamProvider(widget.conversation.id));
-    final isTyping = typingAsync.value == widget.conversation.otherUser?.id;
+    final isTyping = _messagesController?.typingUserId != null && 
+                     _messagesController?.typingUserId == widget.conversation.otherUser?.id;
 
     final otherUser = widget.conversation.otherUser;
     final userName = otherUser?.fullName ?? 'Usuário';

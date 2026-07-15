@@ -20,6 +20,7 @@ import 'package:quintou_app/core/services/secure_storage_service.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:quintou_app/features/onboarding/presentation/screens/onboarding_screen.dart';
+import 'package:quintou_app/features/profile/presentation/screens/notifications_screen.dart';
 
 // Global reference to ProviderContainer for auth checks
 late ProviderContainer _container;
@@ -137,6 +138,10 @@ final goRouter = GoRouter(
         });
         return const Scaffold(body: Center(child: CircularProgressIndicator()));
       },
+    ),
+    GoRoute(
+      path: '/notifications',
+      builder: (context, state) => const NotificationsScreen(),
     ),
     // 404 Not Found route
     GoRoute(

@@ -8,9 +8,15 @@ import 'package:quintou_app/features/chat/data/models/message_model.dart';
 
 class WebSocketService {
   WebSocketChannel? _channel;
-  final String conversationId;
   final _messageController = StreamController<ChatMessage>.broadcast();
-  final _typingController = StreamController<String>.broadcast();
+  final _typingController = StreamController<Map<String, String>>.broadcast();
+  
+  // Singleton pattern
+  static final WebSocketService _instance = WebSocketService._internal();
+  factory WebSocketService() => _instance;
+  WebSocketService._internal() {
+    SystemChannels.lifecycle.setMessageHandler(_handleAppLifecycle);
+  }
   
   bool _isConnected = false;
   bool _isReconnecting = false;
@@ -24,13 +30,10 @@ class WebSocketService {
   static const _maxReconnectAttempts = 10;
   static const _heartbeatInterval = Duration(seconds: 30);
 
-  WebSocketService({required this.conversationId}) {
-    // Listen for app lifecycle changes
-    SystemChannels.lifecycle.setMessageHandler(_handleAppLifecycle);
-  }
+
 
   Stream<ChatMessage> get messageStream => _messageController.stream;
-  Stream<String> get typingStream => _typingController.stream;
+  Stream<Map<String, String>> get typingStream => _typingController.stream;
   bool get isConnected => _isConnected;
 
   Future<void> connect() async {
@@ -49,7 +52,7 @@ class WebSocketService {
       
       // Convert https:// URL to wss:// or http to ws
       final wsUrl = ApiClient.baseUrl.replaceFirst('http', 'ws');
-      final uri = Uri.parse('$wsUrl/ws/chat/$conversationId?token=$token');
+      final uri = Uri.parse('$wsUrl/ws/chat?token=$token');
 
       print('Connecting to WebSocket: $uri');
       _channel = WebSocketChannel.connect(uri);
@@ -93,7 +96,10 @@ class WebSocketService {
         final message = ChatMessage.fromJson(payload['data']);
         _messageController.add(message);
       } else if (payload['type'] == 'user_typing') {
-        _typingController.add(payload['user_id']);
+        _typingController.add({
+          'user_id': payload['user_id'].toString(),
+          'conversation_id': payload['conversation_id'].toString(),
+        });
       } else if (payload['type'] == 'pong') {
         // Heartbeat response - connection is alive
         print('Received pong from server');
@@ -173,10 +179,11 @@ class WebSocketService {
     return null;
   }
 
-  void sendMessage(String content) {
+  void sendMessage(String conversationId, String content) {
     if (_isConnected && _channel != null) {
       final payload = jsonEncode({
-        'type': 'message',
+        'type': 'send_message',
+        'conversation_id': conversationId,
         'content': content,
       });
       _sendRaw(payload);
@@ -185,10 +192,11 @@ class WebSocketService {
     }
   }
 
-  void sendTypingIndicator() {
+  void sendTypingIndicator(String conversationId) {
     if (_isConnected && _channel != null) {
       final payload = jsonEncode({
         'type': 'typing',
+        'conversation_id': conversationId,
       });
       _sendRaw(payload);
     }
