@@ -103,19 +103,29 @@ class NotificationsNotifier extends AsyncNotifier<List<NotificationModel>> {
     final index = list.indexWhere((n) => n.id == id);
     if (index != -1 && !list[index].isRead) {
       final repo = ref.read(notificationsRepositoryProvider);
-      await repo.markAsRead(id);
       
+      // Optimistic update
+      final original = list[index];
       list[index] = NotificationModel(
-        id: list[index].id,
-        type: list[index].type,
-        title: list[index].title,
-        body: list[index].body,
-        data: list[index].data,
+        id: original.id,
+        type: original.type,
+        title: original.title,
+        body: original.body,
+        data: original.data,
         isRead: true,
-        createdAt: list[index].createdAt,
+        createdAt: original.createdAt,
       );
       state = AsyncValue.data(list);
       ref.invalidate(unreadNotificationsCountProvider);
+      
+      try {
+        await repo.markAsRead(id);
+      } catch (_) {
+        // Revert on failure
+        list[index] = original;
+        state = AsyncValue.data(list);
+        ref.invalidate(unreadNotificationsCountProvider);
+      }
     }
   }
   

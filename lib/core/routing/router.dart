@@ -158,6 +158,7 @@ bool _isProtectedRoute(String path) {
     '/booking-setup',
     '/create-space', 
     '/chat',
+    '/notifications',
   ];
   
   return protectedPaths.any((protectedPath) => path.startsWith(protectedPath));

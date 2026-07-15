@@ -1,4 +1,4 @@
-import 'dart:io';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
@@ -12,14 +12,12 @@ class PushNotificationService {
   static final FlutterLocalNotificationsPlugin _localNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   static Future<void> initialize() async {
-    // 1. Request permissions for iOS
-    if (Platform.isIOS) {
-      await _firebaseMessaging.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-    }
+    // 1. Request permissions (required on iOS always, and Android 13+)
+    await _firebaseMessaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
 
     // 2. Initialize Local Notifications for foreground display
     const AndroidInitializationSettings initializationSettingsAndroid =
@@ -104,7 +102,7 @@ class PushNotificationService {
                         borderRadius: BorderRadius.circular(30),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.15),
+                            color: Colors.black.withAlpha(38),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
