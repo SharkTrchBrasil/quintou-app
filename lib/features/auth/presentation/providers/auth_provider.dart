@@ -94,6 +94,12 @@ class AuthNotifier extends Notifier<AuthState> {
     state = AuthState();
   }
 
+  void clearError() {
+    if (state.error != null) {
+      state = state.copyWith(clearError: true);
+    }
+  }
+
   Future<void> _performCompleteLogout() async {
     // 1. Clear secure tokens
     await SecureStorageService.clearAll();

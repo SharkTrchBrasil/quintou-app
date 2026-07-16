@@ -6,6 +6,8 @@ import 'package:quintou_app/core/shell/app_shell.dart';
 import 'package:quintou_app/core/providers/providers.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:dio/dio.dart';
+import 'package:quintou_app/core/widgets/login_required_placeholder.dart';
+import 'package:quintou_app/core/widgets/terms_consent_bottom_sheet.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -13,6 +15,9 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
+    if (authState.user == null) {
+      return _buildUnauthenticatedProfile(context, ref);
+    }
     final user = authState.user;
 
     return Scaffold(
@@ -188,6 +193,115 @@ class ProfileScreen extends ConsumerWidget {
         ),
         const Divider(thickness: 1, color: Color(0xFFF5F5F5), height: 1, indent: 24, endIndent: 24),
       ],
+    );
+  }
+
+  Widget _buildUnauthenticatedProfile(BuildContext context, WidgetRef ref) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        const Icon(
+                          Icons.person_outline,
+                          size: 64,
+                          color: Colors.black87,
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: Colors.purple.withOpacity(0.3),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Meu perfil',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Descubra descontos exclusivos, converse com viajantes e explore os eventos do hostel.',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[800],
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          ref.read(authProvider.notifier).clearError();
+                          context.push('/login');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFF05A28), // Laranja vibrante
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Entrar ou inscrever-se',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 8),
+              
+              const Padding(
+                padding: EdgeInsets.all(24.0),
+                child: Text('Legal', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ),
+              
+              _buildMenuItem('Termos de Uso', onTap: () => context.push('/legal', extra: 0)),
+              _buildMenuItem('Política de Privacidade', onTap: () => context.push('/legal', extra: 1)),
+              _buildMenuItem('Termos do Proprietário', onTap: () => context.push('/legal', extra: 2)),
+              _buildMenuItem('Termos do Hóspede', onTap: () => context.push('/legal', extra: 3)),
+              _buildMenuItem('Política de Cancelamento', onTap: () => context.push('/legal', extra: 4)),
+              
+              const Divider(thickness: 1, color: Color(0xFFE0E0E0), height: 32),
+              _buildMenuItem('Report illegal content'),
+              _buildMenuItem('Ajuda'),
+              _buildMenuItem('Outro'),
+              const SizedBox(height: 32),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

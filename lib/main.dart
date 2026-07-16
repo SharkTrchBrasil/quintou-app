@@ -100,6 +100,12 @@ class MyApp extends StatelessWidget {
           unselectedIconTheme: IconThemeData(color: Colors.grey),
           selectedLabelStyle: TextStyle(fontWeight: FontWeight.bold),
         ),
+        timePickerTheme: const TimePickerThemeData(
+          backgroundColor: Colors.white,
+        ),
+        datePickerTheme: const DatePickerThemeData(
+          backgroundColor: Colors.white,
+        ),
       ),
       debugShowCheckedModeBanner: false,
       routerConfig: goRouter,

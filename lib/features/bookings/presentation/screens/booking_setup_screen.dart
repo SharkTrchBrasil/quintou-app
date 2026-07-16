@@ -26,6 +26,14 @@ class _BookingSetupScreenState extends ConsumerState<BookingSetupScreen> {
 
   bool _isLoading = false;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _pickDateAndTime();
+    });
+  }
+
   void _showGuestModal() {
     showModalBottomSheet(
       context: context,
@@ -76,7 +84,7 @@ class _BookingSetupScreenState extends ConsumerState<BookingSetupScreen> {
 
   String _formatDate() {
     if (_startDate == null || _startTime == null || _endTime == null) {
-      return 'Add date & time';
+      return 'Adicionar data e hora';
     }
     final sd = _startDate!;
     final st = _startTime!;
@@ -148,7 +156,7 @@ class _BookingSetupScreenState extends ConsumerState<BookingSetupScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => context.pop(),
         ),
-        title: const Text('Send a message to host', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: const Text('Enviar mensagem ao anfitrião', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -172,7 +180,7 @@ class _BookingSetupScreenState extends ConsumerState<BookingSetupScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(widget.space.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        Text('Hosted by ${widget.space.hostName}', style: const TextStyle(color: Colors.grey)),
+                        Text('Anfitrião: ${widget.space.hostName}', style: const TextStyle(color: Colors.grey)),
                         const SizedBox(height: 8),
                         Row(
                           children: [
@@ -203,7 +211,7 @@ class _BookingSetupScreenState extends ConsumerState<BookingSetupScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('When would you like to book? *', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text('Quando você quer agendar? *', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   TextButton(onPressed: _pickDateAndTime, child: const Text('Edit', style: TextStyle(color: Color(0xFF00AEEF)))),
                 ],
               ),
@@ -214,18 +222,18 @@ class _BookingSetupScreenState extends ConsumerState<BookingSetupScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Who's coming? *", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text("Quem vai? *", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   TextButton(onPressed: _showGuestModal, child: const Text('Edit', style: TextStyle(color: Color(0xFF00AEEF)))),
                 ],
               ),
               Text(
-                (_adults + _children + _infants) > 1 ? '${_adults + _children + _infants} guests' : '1 guest',
+                (_adults + _children + _infants) > 1 ? '${_adults + _children + _infants} guests' : '1 hóspede',
                 style: TextStyle(fontSize: 16, color: (_adults + _children + _infants) > 0 ? Colors.black : Colors.grey),
               ),
               
               const SizedBox(height: 32),
               
-              const Text('Message to host', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text('Mensagem ao anfitrião', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
               const Text('Let the host know what you\'re looking for', style: TextStyle(color: Colors.grey)),
               const SizedBox(height: 12),
@@ -249,7 +257,7 @@ class _BookingSetupScreenState extends ConsumerState<BookingSetupScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Text(
-                  'Reminder from Quintou: Sharing contact information and arranging payment off-platform is against our Terms of Service.',
+                  'Lembrete do Quintou: Compartilhar informações de contato e combinar pagamentos fora da plataforma é contra os nossos Termos de Serviço.',
                   style: TextStyle(color: Color(0xFF0088CC)),
                 ),
               ),
@@ -279,10 +287,11 @@ class _BookingSetupScreenState extends ConsumerState<BookingSetupScreen> {
             onPressed: _isLoading ? null : _submitBooking,
             child: _isLoading 
                 ? const CircularProgressIndicator(color: Colors.white)
-                : const Text('Start conversation', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                : const Text('Iniciar conversa', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
           ),
         ),
       ),
     );
   }
 }
+

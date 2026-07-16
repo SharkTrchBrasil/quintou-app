@@ -76,9 +76,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       if (placemarks.isNotEmpty) {
         final place = placemarks.first;
+        final city = place.subAdministrativeArea ?? place.locality;
+        if (city != null) {
+          ref.read(currentCityProvider.notifier).setCity(city);
+        }
         if (mounted) {
           setState(() {
-            _currentLocation = '${place.subAdministrativeArea ?? place.locality ?? 'Sua Localização'}, ${place.administrativeArea ?? ''}';
+            _currentLocation = '${city ?? 'Sua Localização'}, ${place.administrativeArea ?? ''}';
             _isLoadingLocation = false;
           });
         }
@@ -100,23 +104,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  IconData _getIconData(String iconName) {
-    switch (iconName) {
-      case 'pool': return Icons.pool;
-      case 'nature_people': return Icons.nature_people;
-      case 'celebration': return Icons.celebration;
-      case 'sports_tennis': return Icons.sports_tennis;
-      case 'camera_alt': return Icons.camera_alt;
-      case 'toys': return Icons.toys;
-      case 'chair': return Icons.chair;
-      case 'outdoor_grill': return Icons.outdoor_grill;
-      default: return Icons.category;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final categoriesAsyncValue = ref.watch(categoriesProvider);
+    final categoriesAsyncValue = ref.watch(homeCategoriesProvider);
     final spacesAsyncValue = ref.watch(spacesProvider);
 
     return Scaffold(
@@ -209,7 +199,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ref.read(searchCategoryProvider.notifier).setCategory('Tudo no Quintou');
                             ref.read(guestTabIndexProvider.notifier).setIndex(1); // Vai para aba Buscar
                           },
-                          child: _buildCategoryPill('Tudo', Icons.apps, isSelected),
+                            child: _buildCategoryPill('Tudo', Icon(Icons.apps, size: 18, color: isSelected ? Colors.black : Colors.black87), isSelected),
                         );
                       }
                       
@@ -225,7 +215,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ref.read(searchCategoryProvider.notifier).setCategory(categoryName);
                           ref.read(guestTabIndexProvider.notifier).setIndex(1); // Vai para aba Buscar
                         },
-                        child: _buildCategoryPill(cat.name, _getIconData(cat.icon), isSelected),
+                        child: _buildCategoryPill(cat.name, Text(cat.icon, style: const TextStyle(fontSize: 16)), isSelected),
                       );
                     },
                   );
@@ -321,7 +311,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildCategoryPill(String label, IconData icon, bool isSelected) {
+  Widget _buildCategoryPill(String label, Widget iconWidget, bool isSelected) {
     return Container(
       margin: const EdgeInsets.only(right: 12.0),
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -335,11 +325,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 18,
-            color: isSelected ? Colors.black : Colors.black87,
-          ),
+          iconWidget,
           const SizedBox(width: 8),
           Text(
             label,

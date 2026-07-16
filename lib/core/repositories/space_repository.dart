@@ -83,7 +83,7 @@ class SpaceRepository {
   }
 
   Future<List<Space>> getMyListings() async {
-    final response = await _apiClient.dio.get('/spaces/host/me');
+    final response = await _apiClient.dio.get('/spaces/my');
     return (response.data as List).map((json) => Space.fromJson(json)).toList();
   }
 

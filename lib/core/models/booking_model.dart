@@ -32,6 +32,42 @@ class Booking {
     this.space,
   });
 
-  factory Booking.fromJson(Map<String, dynamic> json) => _$BookingFromJson(json);
+  factory Booking.fromJson(Map<String, dynamic> json) {
+    final dateStr = json['date'];
+    final startStr = json['startTime'] ?? json['start_time'];
+    final endStr = json['endTime'] ?? json['end_time'];
+
+    // Concatenate date + time for proper DateTime parsing
+    if (dateStr != null && startStr != null && !startStr.toString().contains('T')) {
+      json['startTime'] = '${dateStr}T$startStr';
+    }
+    if (dateStr != null && endStr != null && !endStr.toString().contains('T')) {
+      json['endTime'] = '${dateStr}T$endStr';
+    }
+
+    // Map snake_case to camelCase in case the API changed
+    json['guestId'] ??= json['guest_id'];
+    json['spaceId'] ??= json['space_id'];
+    // Parse numGuests
+    var nGuests = json['numGuests'] ?? json['num_guests'];
+    if (nGuests is String) {
+      json['numGuests'] = int.tryParse(nGuests) ?? 1;
+    } else {
+      json['numGuests'] = nGuests;
+    }
+
+    // Parse totalPrice
+    var tPrice = json['totalPrice'] ?? json['total_price'];
+    if (tPrice is String) {
+      json['totalPrice'] = double.tryParse(tPrice) ?? 0.0;
+    } else {
+      json['totalPrice'] = tPrice;
+    }
+    
+    json['createdAt'] ??= json['created_at'];
+
+    return _$BookingFromJson(json);
+  }
+  
   Map<String, dynamic> toJson() => _$BookingToJson(this);
 }

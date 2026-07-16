@@ -5,6 +5,7 @@ import 'package:quintou_app/features/chat/presentation/providers/chat_provider.d
 import 'package:quintou_app/features/auth/presentation/providers/auth_provider.dart';
 import 'package:quintou_app/core/shell/app_shell.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:quintou_app/core/widgets/login_required_placeholder.dart';
 
 class ConversationsScreen extends ConsumerStatefulWidget {
   const ConversationsScreen({super.key});
@@ -17,8 +18,16 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final conversationsAsync = ref.watch(conversationsProvider);
     final authState = ref.watch(authProvider);
+    if (authState.user == null) {
+      return const LoginRequiredPlaceholder(
+        title: 'Mensagens',
+        message: 'Faça login para ver suas mensagens',
+        subMessage: 'Converse com anfitriões ou hóspedes sobre suas reservas.',
+        icon: Icons.chat_bubble_outline,
+      );
+    }
+    final conversationsAsync = ref.watch(conversationsProvider);
     final currentUserId = authState.user?.id;
 
     return Scaffold(
@@ -247,6 +256,7 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
                       );
                     },
                   ),
+                ),
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF00AEEF))),

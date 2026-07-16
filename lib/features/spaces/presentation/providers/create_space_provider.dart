@@ -18,29 +18,11 @@ class AvailabilityRule {
   };
 }
 
-class CategoryModel {
-  final String id;
-  final String name;
-  final String slug;
-  final String icon;
-  final String listingType;
-
-  CategoryModel({required this.id, required this.name, required this.slug, required this.icon, required this.listingType});
-
-  factory CategoryModel.fromJson(Map<String, dynamic> json) {
-    return CategoryModel(
-      id: json['id'],
-      name: json['name'],
-      slug: json['slug'],
-      icon: json['icon'],
-      listingType: json['listing_type'],
-    );
-  }
-}
 
 class CreateSpaceState {
   // Step 0: Categoria
   final String? categoryId;
+  final String? categorySlug;
   final String listingType;
 
   // Step 1: Titulo e Descrição
@@ -76,6 +58,21 @@ class CreateSpaceState {
   final bool allowsAlcohol;
   final bool allowsLoudMusic;
   final bool allowsCommercial;
+  
+  // SERVICE fields
+  final String serviceAreaDescription;
+  final int yearsExperience;
+  final String portfolioUrl;
+  
+  // VEHICLE fields
+  final String vehicleMake;
+  final String vehicleModel;
+  final int vehicleYear;
+  final double vehicleLengthFt;
+  final int engineHp;
+  final bool hasCaptain;
+  final bool requiresLicense;
+  final String embarkLocation;
 
   // Step 5: Comodidades
   final List<String> amenities;
@@ -106,6 +103,7 @@ class CreateSpaceState {
 
   CreateSpaceState({
     this.categoryId,
+    this.categorySlug,
     this.listingType = 'SPACE',
     this.title = '',
     this.description = '',
@@ -131,7 +129,7 @@ class CreateSpaceState {
     this.allowsParties = false,
     this.allowsSmoking = false,
     this.allowsPets = false,
-    this.allowsChildren = true,
+    this.allowsChildren = false,
     this.allowsAlcohol = false,
     this.allowsLoudMusic = false,
     this.allowsCommercial = false,
@@ -143,6 +141,19 @@ class CreateSpaceState {
     this.isAdaFriendly = false,
     this.hasHeatedPool = false,
     this.hasHotTub = false,
+    
+    this.serviceAreaDescription = '',
+    this.yearsExperience = 0,
+    this.portfolioUrl = '',
+    
+    this.vehicleMake = '',
+    this.vehicleModel = '',
+    this.vehicleYear = 2020,
+    this.vehicleLengthFt = 0.0,
+    this.engineHp = 0,
+    this.hasCaptain = false,
+    this.requiresLicense = false,
+    this.embarkLocation = '',
     
     this.images = const [],
     
@@ -161,12 +172,14 @@ class CreateSpaceState {
   });
 
   CreateSpaceState copyWith({
-    String? categoryId, String? listingType,
+    String? categoryId, String? categorySlug, String? listingType,
     String? title, String? description,
     String? zipCode, String? addressLine, String? city, String? state, String? neighborhood, String? referencePoint,
     bool? deliveryAvailable, double? deliveryFee, int? deliveryRadiusKm, String? deliveryDescription,
     int? maxGuests, bool? isOutdoor, String? spaceType, double? sizeLength, double? sizeWidth, String? privacyLevel,
     bool? allowsParties, bool? allowsSmoking, bool? allowsPets, bool? allowsChildren, bool? allowsAlcohol, bool? allowsLoudMusic, bool? allowsCommercial,
+    String? serviceAreaDescription, int? yearsExperience, String? portfolioUrl,
+    String? vehicleMake, String? vehicleModel, int? vehicleYear, double? vehicleLengthFt, int? engineHp, bool? hasCaptain, bool? requiresLicense, String? embarkLocation,
     List<String>? amenities, List<String>? tags, bool? hasRestroom, bool? hasParking, bool? isAdaFriendly, bool? hasHeatedPool, bool? hasHotTub,
     List<XFile>? images,
     List<AvailabilityRule>? availabilityRules, int? minHours, int? maxHours,
@@ -175,6 +188,7 @@ class CreateSpaceState {
   }) {
     return CreateSpaceState(
       categoryId: categoryId ?? this.categoryId,
+      categorySlug: categorySlug ?? this.categorySlug,
       listingType: listingType ?? this.listingType,
       title: title ?? this.title,
       description: description ?? this.description,
@@ -201,6 +215,17 @@ class CreateSpaceState {
       allowsAlcohol: allowsAlcohol ?? this.allowsAlcohol,
       allowsLoudMusic: allowsLoudMusic ?? this.allowsLoudMusic,
       allowsCommercial: allowsCommercial ?? this.allowsCommercial,
+      serviceAreaDescription: serviceAreaDescription ?? this.serviceAreaDescription,
+      yearsExperience: yearsExperience ?? this.yearsExperience,
+      portfolioUrl: portfolioUrl ?? this.portfolioUrl,
+      vehicleMake: vehicleMake ?? this.vehicleMake,
+      vehicleModel: vehicleModel ?? this.vehicleModel,
+      vehicleYear: vehicleYear ?? this.vehicleYear,
+      vehicleLengthFt: vehicleLengthFt ?? this.vehicleLengthFt,
+      engineHp: engineHp ?? this.engineHp,
+      hasCaptain: hasCaptain ?? this.hasCaptain,
+      requiresLicense: requiresLicense ?? this.requiresLicense,
+      embarkLocation: embarkLocation ?? this.embarkLocation,
       amenities: amenities ?? this.amenities,
       tags: tags ?? this.tags,
       hasRestroom: hasRestroom ?? this.hasRestroom,
@@ -252,6 +277,27 @@ class CreateSpaceNotifier extends Notifier<CreateSpaceState> {
       amenities: amenities, tags: tags, hasRestroom: hasRestroom, hasParking: hasParking, isAdaFriendly: isAdaFriendly, hasHeatedPool: hasHeatedPool, hasHotTub: hasHotTub,
       availabilityRules: availabilityRules, minHours: minHours, maxHours: maxHours,
       price: price, pricingMode: pricingMode, cancellationPolicy: cancellationPolicy, requiresApproval: requiresApproval, securityDeposit: securityDeposit,
+    );
+  }
+
+  void updateServiceVehicleFields({
+    String? categorySlug,
+    String? serviceAreaDescription, int? yearsExperience, String? portfolioUrl,
+    String? vehicleMake, String? vehicleModel, int? vehicleYear, double? vehicleLengthFt, int? engineHp, bool? hasCaptain, bool? requiresLicense, String? embarkLocation,
+  }) {
+    this.state = this.state.copyWith(
+      categorySlug: categorySlug,
+      serviceAreaDescription: serviceAreaDescription ?? this.state.serviceAreaDescription,
+      yearsExperience: yearsExperience ?? this.state.yearsExperience,
+      portfolioUrl: portfolioUrl ?? this.state.portfolioUrl,
+      vehicleMake: vehicleMake ?? this.state.vehicleMake,
+      vehicleModel: vehicleModel ?? this.state.vehicleModel,
+      vehicleYear: vehicleYear ?? this.state.vehicleYear,
+      vehicleLengthFt: vehicleLengthFt ?? this.state.vehicleLengthFt,
+      engineHp: engineHp ?? this.state.engineHp,
+      hasCaptain: hasCaptain ?? this.state.hasCaptain,
+      requiresLicense: requiresLicense ?? this.state.requiresLicense,
+      embarkLocation: embarkLocation ?? this.state.embarkLocation,
     );
   }
 
@@ -358,6 +404,19 @@ class CreateSpaceNotifier extends Notifier<CreateSpaceState> {
         "allows_alcohol": state.allowsAlcohol,
         "allows_loud_music": state.allowsLoudMusic,
         "allows_commercial": state.allowsCommercial,
+        
+        "service_area_description": state.serviceAreaDescription,
+        "years_experience": state.yearsExperience,
+        "portfolio_url": state.portfolioUrl,
+        
+        "vehicle_make": state.vehicleMake,
+        "vehicle_model": state.vehicleModel,
+        "vehicle_year": state.vehicleYear,
+        "vehicle_length_ft": state.vehicleLengthFt,
+        "engine_hp": state.engineHp,
+        "has_captain": state.hasCaptain,
+        "requires_license": state.requiresLicense,
+        "embark_location": state.embarkLocation,
         
         "cancellation_policy": state.cancellationPolicy,
         "requires_approval": state.requiresApproval,

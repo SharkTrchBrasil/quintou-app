@@ -25,12 +25,12 @@ class BookingRepository {
   }
 
   Future<List<Booking>> getGuestBookings() async {
-    final response = await _apiClient.dio.get('/bookings');
+    final response = await _apiClient.dio.get('/bookings/my');
     return (response.data as List).map((json) => Booking.fromJson(json)).toList();
   }
 
   Future<List<Booking>> getHostBookings() async {
-    final response = await _apiClient.dio.get('/bookings/host/me');
+    final response = await _apiClient.dio.get('/bookings/host');
     return (response.data as List).map((json) => Booking.fromJson(json)).toList();
   }
 }

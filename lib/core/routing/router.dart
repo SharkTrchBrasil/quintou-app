@@ -15,6 +15,8 @@ import 'package:quintou_app/features/chat/data/models/conversation_model.dart';
 import 'package:quintou_app/core/shell/app_shell.dart';
 import 'package:quintou_app/core/models/space_model.dart';
 import 'package:quintou_app/features/profile/presentation/screens/legal_screen.dart';
+import 'package:quintou_app/features/bookings/presentation/screens/booking_details_screen.dart';
+import 'package:quintou_app/core/models/booking_model.dart';
 import 'package:quintou_app/features/auth/presentation/providers/auth_provider.dart';
 import 'package:quintou_app/core/services/secure_storage_service.dart';
 
@@ -33,14 +35,6 @@ final goRouter = GoRouter(
   initialLocation: '/',
   observers: [BotToastNavigatorObserver()],
   redirect: (context, state) async {
-    // Check onboarding
-    final prefs = await SharedPreferences.getInstance();
-    final hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
-    
-    if (!hasSeenOnboarding && state.matchedLocation != '/onboarding') {
-      return '/onboarding';
-    }
-
     // Check if user is authenticated
     final hasTokens = await SecureStorageService.hasTokens();
     final authState = _container.read(authProvider);
@@ -87,6 +81,15 @@ final goRouter = GoRouter(
       builder: (context, state) {
         final space = state.extra as Space;
         return SpaceDetailsScreen(space: space);
+      },
+    ),
+    GoRoute(
+      path: '/booking-details',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        final booking = extra['booking'] as Booking;
+        final isHostMode = extra['isHostMode'] as bool? ?? false;
+        return BookingDetailsScreen(booking: booking, isHostMode: isHostMode);
       },
     ),
     GoRoute(

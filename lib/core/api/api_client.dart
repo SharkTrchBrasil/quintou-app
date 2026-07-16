@@ -72,7 +72,7 @@ class ApiClient {
               await _forceLogout();
               return handler.next(DioException(
                 requestOptions: e.requestOptions,
-                error: 'Sessão expirada. Faça login novamente.',
+                error: 'Sessão expirada. Faça login novamente. URL: ${e.requestOptions.path}',
                 response: e.response,
               ));
             }
@@ -91,7 +91,7 @@ class ApiClient {
           if (statusCode == 404) {
             return handler.next(DioException(
               requestOptions: e.requestOptions,
-              error: 'Recurso não encontrado.',
+              error: 'Recurso não encontrado. URL: ${e.requestOptions.path}',
               response: e.response,
             ));
           }

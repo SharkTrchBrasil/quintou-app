@@ -14,6 +14,7 @@ import 'package:quintou_app/features/hosting/presentation/screens/host_bookings_
 import 'package:quintou_app/features/hosting/presentation/screens/host_listings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:quintou_app/core/providers/notification_provider.dart';
+import 'package:quintou_app/core/widgets/terms_consent_bottom_sheet.dart';
 
 class IsHostModeNotifier extends Notifier<bool> {
   @override
@@ -68,7 +69,7 @@ class AppShell extends ConsumerStatefulWidget {
 
 class _AppShellState extends ConsumerState<AppShell> {
   // Telas do modo HÓSPEDE
-  final List<Widget> _guestScreens = const [
+  final List<Widget> _guestScreens = [
     HomeScreen(),
     SearchScreen(),
     GuestBookingsScreen(),
@@ -78,13 +79,21 @@ class _AppShellState extends ConsumerState<AppShell> {
   ];
 
   // Telas do modo ANFITRIÃO
-  final List<Widget> _hostScreens = const [
+  final List<Widget> _hostScreens = [
     HostDashboardScreen(),
     HostBookingsScreen(),
     HostListingsScreen(),
     ConversationsScreen(),
     ProfileScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      TermsConsentBottomSheet.show(context);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -127,26 +136,55 @@ class _AppShellState extends ConsumerState<AppShell> {
       type: BottomNavigationBarType.fixed,
       currentIndex: currentIndex,
       onTap: (index) => ref.read(guestTabIndexProvider.notifier).setIndex(index),
+      selectedItemColor: const Color(0xFF6A1B9A), // Roxo do Quintou
+      unselectedItemColor: Colors.grey.shade500,
+      selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+      unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
       items: [
         const BottomNavigationBarItem(
-          icon: Icon(Icons.wb_sunny_outlined),
-          label: 'Home',
+          icon: Icon(Icons.home_outlined),
+          activeIcon: Icon(Icons.home_rounded),
+          label: 'Início',
         ),
-        const BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Explorar'),
-        const BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Reservas'),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.search_rounded),
+          activeIcon: Icon(Icons.search_rounded, size: 28),
+          label: 'Buscar',
+        ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.calendar_month_outlined),
+          activeIcon: Icon(Icons.calendar_month_rounded),
+          label: 'Agendamentos',
+        ),
         BottomNavigationBarItem(
           icon: unreadCount > 0
               ? Badge(
                   label: Text(unreadCount > 99 ? '99+' : '$unreadCount'),
                   backgroundColor: const Color(0xFFB7F65E),
                   textColor: Colors.black,
-                  child: const Icon(Icons.chat_bubble_outline),
+                  child: const Icon(Icons.chat_bubble_outline_rounded),
                 )
-              : const Icon(Icons.chat_bubble_outline),
-          label: 'Chats',
+              : const Icon(Icons.chat_bubble_outline_rounded),
+          activeIcon: unreadCount > 0
+              ? Badge(
+                  label: Text(unreadCount > 99 ? '99+' : '$unreadCount'),
+                  backgroundColor: const Color(0xFFB7F65E),
+                  textColor: Colors.black,
+                  child: const Icon(Icons.chat_bubble_rounded),
+                )
+              : const Icon(Icons.chat_bubble_rounded),
+          label: 'Mensagens',
         ),
-        const BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: 'Favoritos'),
-        const BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Perfil'),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.favorite_border_rounded),
+          activeIcon: Icon(Icons.favorite_rounded),
+          label: 'Favoritos',
+        ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.person_outline_rounded),
+          activeIcon: Icon(Icons.person_rounded),
+          label: 'Perfil',
+        ),
       ],
     );
   }
@@ -159,22 +197,50 @@ class _AppShellState extends ConsumerState<AppShell> {
       type: BottomNavigationBarType.fixed,
       currentIndex: currentIndex,
       onTap: (index) => ref.read(hostTabIndexProvider.notifier).setIndex(index),
+      selectedItemColor: const Color(0xFF6A1B9A), // Roxo do Quintou
+      unselectedItemColor: Colors.grey.shade500,
+      selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+      unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
       items: [
-        const BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Hosting'),
-        const BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Bookings'),
-        const BottomNavigationBarItem(icon: Icon(Icons.home_work), label: 'Listings'),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.dashboard_outlined),
+          activeIcon: Icon(Icons.dashboard_rounded),
+          label: 'Painel',
+        ),
+         const BottomNavigationBarItem(
+          icon: Icon(Icons.calendar_month_outlined),
+          activeIcon: Icon(Icons.calendar_month),
+          label: 'Agendamentos',
+        ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.view_list_outlined),
+          activeIcon: Icon(Icons.view_list_rounded),
+          label: 'Anúncios',
+        ),
         BottomNavigationBarItem(
           icon: unreadCount > 0
               ? Badge(
                   label: Text(unreadCount > 99 ? '99+' : '$unreadCount'),
                   backgroundColor: const Color(0xFFB7F65E),
                   textColor: Colors.black,
-                  child: const Icon(Icons.inbox),
+                  child: const Icon(Icons.chat_bubble_outline_rounded),
                 )
-              : const Icon(Icons.inbox),
-          label: 'Inbox',
+              : const Icon(Icons.chat_bubble_outline_rounded),
+          activeIcon: unreadCount > 0
+              ? Badge(
+                  label: Text(unreadCount > 99 ? '99+' : '$unreadCount'),
+                  backgroundColor: const Color(0xFFB7F65E),
+                  textColor: Colors.black,
+                  child: const Icon(Icons.chat_bubble_rounded),
+                )
+              : const Icon(Icons.chat_bubble_rounded),
+          label: 'Mensagens',
         ),
-        const BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.person_outline_rounded),
+          activeIcon: Icon(Icons.person_rounded),
+          label: 'Perfil',
+        ),
       ],
     );
   }
@@ -211,3 +277,4 @@ class _PlaceholderScreen extends StatelessWidget {
     );
   }
 }
+

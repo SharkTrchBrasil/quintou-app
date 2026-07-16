@@ -6,7 +6,7 @@ import 'package:quintou_app/core/models/space_model.dart';
 import 'package:quintou_app/features/favorites/presentation/providers/favorites_provider.dart';
 import 'package:quintou_app/features/auth/presentation/providers/auth_provider.dart';
 import 'package:quintou_app/features/spaces/presentation/widgets/space_list_card.dart';
-
+import 'package:quintou_app/core/widgets/login_required_placeholder.dart';
 class FavoritesScreen extends ConsumerStatefulWidget {
   const FavoritesScreen({super.key});
 
@@ -39,83 +39,11 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
 
     // Not logged in
     if (authState.user == null) {
-      return Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          title: const Text(
-            'Favoritos',
-            style: TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.bold,
-              fontSize: 24,
-            ),
-          ),
-          backgroundColor: Colors.white,
-          elevation: 0,
-        ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.favorite_border,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Faça login para ver seus favoritos',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Salve os espaços que mais gostou para encontrá-los facilmente depois.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => context.push('/login'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Entrar',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+      return const LoginRequiredPlaceholder(
+        title: 'Favoritos',
+        message: 'Faça login para ver seus favoritos',
+        subMessage: 'Salve os espaços que mais gostou para encontrá-los facilmente depois.',
+        icon: Icons.favorite_border,
       );
     }
 
@@ -157,7 +85,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
       color: const Color(0xFFB7F65E),
       onRefresh: () => ref.read(favoritesProvider.notifier).loadFavorites(),
       child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
         itemCount: favState.favoriteSpaces.length,
         itemBuilder: (context, index) {
           final space = favState.favoriteSpaces[index];

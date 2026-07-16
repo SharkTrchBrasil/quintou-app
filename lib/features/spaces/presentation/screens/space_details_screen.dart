@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:quintou_app/core/models/space_model.dart';
 import 'package:quintou_app/features/spaces/presentation/widgets/space_grid_card.dart';
 import 'package:quintou_app/features/chat/presentation/screens/chat_screen.dart';
+import 'package:quintou_app/features/bookings/presentation/screens/booking_setup_screen.dart';
 import 'package:quintou_app/features/favorites/presentation/providers/favorites_provider.dart';
 import 'package:quintou_app/features/auth/presentation/providers/auth_provider.dart';
 import 'package:quintou_app/features/chat/presentation/providers/chat_provider.dart';
@@ -366,27 +367,28 @@ class _SpaceDetailsScreenState extends ConsumerState<SpaceDetailsScreen> {
           ),
         ),
         actions: [
-          Container(
-            margin: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: Icon(
-                isFavorited ? Icons.favorite : Icons.favorite_border, 
-                color: isFavorited ? Colors.red : Colors.black87
+          if (!isOwner)
+            Container(
+              margin: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
               ),
-              onPressed: () {
-                if (authState.user == null) {
-                  BotToast.showText(text: 'Faça login para favoritar');
-                  context.push('/login');
-                  return;
-                }
-                ref.read(favoritesProvider.notifier).toggleFavorite(ad.id, space: ad);
-              },
+              child: IconButton(
+                icon: Icon(
+                  isFavorited ? Icons.favorite : Icons.favorite_border, 
+                  color: isFavorited ? Colors.red : Colors.black87
+                ),
+                onPressed: () {
+                  if (authState.user == null) {
+                    BotToast.showText(text: 'Faça login para favoritar');
+                    context.push('/login');
+                    return;
+                  }
+                  ref.read(favoritesProvider.notifier).toggleFavorite(ad.id, space: ad);
+                },
+              ),
             ),
-          ),
           Container(
             margin: const EdgeInsets.all(8),
             decoration: const BoxDecoration(
@@ -1303,7 +1305,7 @@ class _SpaceDetailsScreenState extends ConsumerState<SpaceDetailsScreen> {
           ],
         ),
       ),
-      bottomSheet: Container(
+      bottomSheet: isOwner ? const SizedBox.shrink() : Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -1337,7 +1339,19 @@ class _SpaceDetailsScreenState extends ConsumerState<SpaceDetailsScreen> {
                   if (currentUser == null) {
                     context.push('/login');
                   } else {
-                    context.push('/booking-setup', extra: ad);
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      useSafeArea: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => ClipRRect(
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                        child: SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.9,
+                          child: BookingSetupScreen(space: ad),
+                        ),
+                      ),
+                    );
                   }
                 },
                 child: const Text('Agendar', style: TextStyle(fontSize: 18, color: Colors.white)),

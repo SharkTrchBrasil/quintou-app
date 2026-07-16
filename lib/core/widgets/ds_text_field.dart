@@ -16,6 +16,7 @@ class DsTextField extends StatelessWidget {
     this.obscureText = false,
     this.suffixIcon,
     this.prefixIcon,
+    this.maxLines = 1,
   });
 
   final String? initialValue;
@@ -30,6 +31,7 @@ class DsTextField extends StatelessWidget {
   final bool obscureText;
   final Widget? suffixIcon;
   final Widget? prefixIcon;
+  final int? maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -84,6 +86,7 @@ class DsTextField extends StatelessWidget {
           inputFormatters: formatters as List<TextInputFormatter>?,
           onChanged: onChanged,
           validator: validator,
+          maxLines: maxLines,
         ),
       ],
     );

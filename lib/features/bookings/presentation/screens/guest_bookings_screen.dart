@@ -2,19 +2,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quintou_app/features/bookings/presentation/providers/guest_bookings_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:quintou_app/features/auth/presentation/providers/auth_provider.dart';
+import 'package:quintou_app/core/widgets/login_required_placeholder.dart';
+import 'package:quintou_app/features/bookings/presentation/widgets/booking_card.dart';
+import 'package:go_router/go_router.dart';
 
 class GuestBookingsScreen extends ConsumerWidget {
   const GuestBookingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    if (authState.user == null) {
+      return const LoginRequiredPlaceholder(
+        title: 'Agendamentos',
+        message: 'Faça login para ver seus agendamentos',
+        subMessage: 'Acompanhe o status das suas reservas e históricos de agendamentos.',
+        icon: Icons.luggage_outlined,
+      );
+    }
     final bookingsAsync = ref.watch(guestBookingsProvider);
 
     return DefaultTabController(
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('My Bookings', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: const Text('Meus Agendamentos', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
           backgroundColor: Colors.white,
           elevation: 0,
           bottom: const TabBar(
@@ -22,9 +35,9 @@ class GuestBookingsScreen extends ConsumerWidget {
             unselectedLabelColor: Colors.grey,
             indicatorColor: Colors.black,
             tabs: [
-              Tab(text: 'Pending'),
-              Tab(text: 'Confirmed'),
-              Tab(text: 'Cancelled'),
+              Tab(text: 'Pendentes'),
+              Tab(text: 'Confirmadas'),
+              Tab(text: 'Canceladas'),
             ],
           ),
         ),
@@ -36,14 +49,14 @@ class GuestBookingsScreen extends ConsumerWidget {
 
             return TabBarView(
               children: [
-                _BookingList(bookings: pending, emptyMessage: 'No pending bookings.'),
-                _BookingList(bookings: confirmed, emptyMessage: 'No confirmed bookings.'),
-                _BookingList(bookings: cancelled, emptyMessage: 'No cancelled bookings.'),
+                _BookingList(bookings: pending, emptyMessage: 'Nenhuma viagem pendente.'),
+                _BookingList(bookings: confirmed, emptyMessage: 'Nenhuma viagem confirmada.'),
+                _BookingList(bookings: cancelled, emptyMessage: 'Nenhuma viagem cancelada.'),
               ],
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, stack) => Center(child: Text('Error: $err')),
+          error: (err, stack) => Center(child: Text('Erro: $err')),
         ),
       ),
     );
@@ -63,33 +76,20 @@ class _BookingList extends StatelessWidget {
         child: Text(emptyMessage, style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
       );
     }
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
+    return ListView.separated(
+      padding: EdgeInsets.zero,
       itemCount: bookings.length,
+      separatorBuilder: (_, __) => const SizedBox.shrink(),
       itemBuilder: (context, index) {
         final booking = bookings[index];
-        final space = booking.space;
-        final start = DateFormat('MMM d, y').format(booking.startTime);
-        final end = DateFormat('MMM d, y').format(booking.endTime);
-        return Card(
-          margin: const EdgeInsets.only(bottom: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (space != null)
-                  Text(space.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                const SizedBox(height: 8),
-                Text('$start - $end', style: TextStyle(color: Colors.grey.shade700)),
-                const SizedBox(height: 4),
-                Text('Guests: ${booking.numGuests}', style: TextStyle(color: Colors.grey.shade700)),
-                const SizedBox(height: 8),
-                Text('Total: \$${booking.totalPrice.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
-              ],
-            ),
-          ),
+        return BookingCard(
+          booking: booking,
+          onTap: () {
+            context.push('/booking-details', extra: {
+              'booking': booking,
+              'isHostMode': false,
+            });
+          },
         );
       },
     );

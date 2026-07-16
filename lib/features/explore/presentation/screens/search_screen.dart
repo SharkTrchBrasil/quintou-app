@@ -6,8 +6,9 @@ import 'package:go_router/go_router.dart';
 
 import 'package:quintou_app/features/explore/data/providers/categories_provider.dart';
 import 'package:quintou_app/features/spaces/presentation/providers/spaces_provider.dart';
-import 'package:quintou_app/features/spaces/data/repositories/space_repository.dart';
-import 'package:quintou_app/features/spaces/data/models/space_model.dart';
+import 'package:quintou_app/core/providers/providers.dart';
+import 'package:quintou_app/core/repositories/space_repository.dart';
+import 'package:quintou_app/core/models/space_model.dart';
 import 'package:quintou_app/features/spaces/presentation/widgets/space_list_card.dart';
 import 'package:quintou_app/features/spaces/presentation/widgets/space_grid_card.dart';
 import 'package:quintou_app/features/explore/presentation/widgets/filters_bottom_sheet.dart';
@@ -60,7 +61,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Future<void> _fetchPage(int pageKey) async {
     try {
-      final repository = ref.read(featureSpaceRepositoryProvider);
+      final repository = ref.read(spaceRepositoryProvider);
       final spaceFilter = ref.read(spaceFilterProvider);
       final sortOption = ref.read(sortOptionProvider);
       final category = ref.read(searchCategoryProvider);
@@ -71,11 +72,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         searchQuery: spaceFilter.searchQuery,
         minPrice: spaceFilter.minPrice,
         maxPrice: spaceFilter.maxPrice,
-        minCapacity: spaceFilter.minCapacity,
-        hasPool: spaceFilter.hasPool,
-        hasBbq: spaceFilter.hasBbq,
-        hasWifi: spaceFilter.hasWifi,
-        hasAc: spaceFilter.hasAc,
+        minGuests: spaceFilter.minGuests,
         sortBy: sortOption,
         category: category,
       );
@@ -179,6 +176,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     showModalBottomSheet(
       context: context,
       useRootNavigator: true,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -258,6 +256,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   Widget build(BuildContext context) {
     final isGridMode = ref.watch(isGridModeProvider);
     final spaceFilter = ref.watch(spaceFilterProvider);
+    final searchCategory = ref.watch(searchCategoryProvider);
     
     ref.listen<SpaceFilterState>(spaceFilterProvider, (previous, next) {
       _pagingController.refresh();
@@ -365,6 +364,47 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ),
               ),
             ),
+            
+            // Chips de Filtros Ativos
+            if (searchCategory != 'Tudo no Quintou')
+              Padding(
+                padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 12.0),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFB7F65E).withOpacity(0.2),
+                          border: Border.all(color: const Color(0xFFB7F65E)),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              searchCategory,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            GestureDetector(
+                              onTap: () {
+                                ref.read(searchCategoryProvider.notifier).setCategory('Tudo no Quintou');
+                              },
+                              child: const Icon(Icons.close, size: 16, color: Colors.black87),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
 
             // Filtros and Ordenar Row
             Padding(
@@ -378,7 +418,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         context: context,
                         isScrollControlled: true,
                         useSafeArea: true,
-                        backgroundColor: Colors.transparent,
+                        backgroundColor: Colors.white,
                         builder: (context) => const FiltersBottomSheet(),
                       );
                     },
@@ -462,13 +502,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     padding: const EdgeInsets.all(16.0),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
-                      childAspectRatio: 0.65,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 0.58,
                     ),
                     builderDelegate: PagedChildBuilderDelegate<Space>(
                       itemBuilder: (BuildContext context, Space item, int index) => SpaceGridCard(
                         space: item,
+                        imageAspectRatio: 1, // Square image for grid view
                         onTap: () => context.push('/space-details', extra: item),
                       ),
                       firstPageErrorIndicatorBuilder: (_) => const Center(child: Text('Erro ao carregar')),

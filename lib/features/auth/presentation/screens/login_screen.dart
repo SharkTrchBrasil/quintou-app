@@ -95,7 +95,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   style: TextStyle(color: Colors.black54),
                 ),
                 TextButton(
-                  onPressed: () => context.push('/register'),
+                  onPressed: () {
+                    ref.read(authProvider.notifier).clearError();
+                    context.push('/register');
+                  },
                   child: const Text(
                     'Cadastre-se',
                     style: TextStyle(color: Color(0xFFB7F65E), fontWeight: FontWeight.bold),

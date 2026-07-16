@@ -140,6 +140,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) return 'Senha é obrigatória';
     if (value.length < 8) return 'Mínimo 8 caracteres';
+    if (!value.contains(RegExp(r'[A-Z]'))) return 'Deve conter pelo menos uma letra maiúscula';
+    if (!value.contains(RegExp(r'[a-z]'))) return 'Deve conter pelo menos uma letra minúscula';
+    if (!value.contains(RegExp(r'\d'))) return 'Deve conter pelo menos um número';
+    if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) return 'Deve conter pelo menos um caractere especial (!@#%...)';
     return null;
   }
 
